@@ -61,8 +61,13 @@ export function StackCardPreview({ stack }: StackCardPreviewProps) {
 
       setUpvoteCount(newCount);
       setHasUpvoted(!hasUpvoted);
+      
+      if (!hasUpvoted) {
+        toast.success('Upvoted! 🔥');
+      }
     } catch (error) {
       console.error('Upvote error:', error);
+      toast.error('Something went wrong');
     } finally {
       setIsUpvoting(false);
     }
@@ -70,7 +75,7 @@ export function StackCardPreview({ stack }: StackCardPreviewProps) {
 
   return (
     <Card 
-      className="p-4 bg-surface/50 border-white/10 hover:border-orange-500/30 transition-all group cursor-pointer"
+      className="p-4 bg-card border-border hover:border-orange-500/50 transition-all cursor-pointer group"
       onClick={handleCardClick}
     >
       {/* Header */}
@@ -81,8 +86,8 @@ export function StackCardPreview({ stack }: StackCardPreviewProps) {
         </Avatar>
         <div className="flex-1 min-w-0">
           <Link 
-            to={`/user/${stack.user.username}`}
-            className="font-medium text-sm hover:text-orange-400 transition-colors"
+            to={`/@${stack.user.username}`}
+            className="font-medium text-sm hover:text-orange-500 transition-colors"
           >
             @{stack.user.username}
           </Link>
@@ -98,29 +103,20 @@ export function StackCardPreview({ stack }: StackCardPreviewProps) {
       </div>
 
       {/* Roast Preview */}
-      <div className="bg-black/20 rounded-lg p-3 mb-3 border border-white/5">
+      <div className="bg-muted/50 rounded-lg p-3 mb-3 border border-border">
         <p className="text-sm text-muted-foreground line-clamp-2">
           {previewText}
         </p>
       </div>
 
-      {/* Stats & Action */}
+      {/* Stats & Actions */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <button
-            onClick={handleUpvote}
-            disabled={isUpvoting}
-            className={`flex items-center gap-1 px-2 py-1 rounded-md transition-colors ${
-              hasUpvoted 
-                ? 'bg-orange-500/20 text-orange-400' 
-                : 'hover:bg-white/5'
-            }`}
-          >
-            <TrendingUp className={`w-3 h-3 ${isUpvoting ? 'animate-pulse' : ''}`} />
-            {upvoteCount}
-          </button>
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
           <span className="flex items-center gap-1">
             🔥 {stack.roast_count}
+          </span>
+          <span className="flex items-center gap-1">
+            ⬆ {upvoteCount}
           </span>
           <span className="flex items-center gap-1">
             💬 {stack.comment_count}
@@ -146,7 +142,7 @@ export function StackCardPreview({ stack }: StackCardPreviewProps) {
             variant="ghost" 
             size="sm" 
             asChild
-            className="group-hover:text-orange-400 transition-colors"
+            className="group-hover:text-orange-500 transition-colors"
           >
             <Link to={`/stack/${stack.slug}`}>
               View Full <ArrowRight className="w-3 h-3 ml-1" />

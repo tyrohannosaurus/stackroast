@@ -9,7 +9,7 @@ interface FeedSortTabsProps {
 
 export function FeedSortTabs({ currentMode, onModeChange }: FeedSortTabsProps) {
   return (
-    <div className="flex items-center gap-2 border-b border-white/10 pb-3 mb-6">
+    <div className="flex items-center gap-2 border-b border-border pb-3 mb-6">
       <span className="text-sm text-muted-foreground mr-2">Sort by:</span>
       
       <Button

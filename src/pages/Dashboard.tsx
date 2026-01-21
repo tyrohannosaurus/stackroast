@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { LoadingFire } from "@/components/LoadingFire";
+import { EmailPreferences } from "@/components/EmailPreferences";
 import { 
   LayoutDashboard, 
   Layers, 
@@ -22,11 +23,9 @@ import {
   Flame,
   TrendingUp,
   BarChart3,
-  MessageSquare,
   Award,
   ExternalLink,
-  Trash2,
-  Edit
+  Trash2
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
@@ -73,7 +72,6 @@ export default function Dashboard() {
   const [bio, setBio] = useState('');
   const [githubUrl, setGithubUrl] = useState('');
   const [twitterHandle, setTwitterHandle] = useState('');
-  const [emailNotifications, setEmailNotifications] = useState(true);
   const [savingSettings, setSavingSettings] = useState(false);
 
   useEffect(() => {
@@ -398,7 +396,7 @@ export default function Dashboard() {
 
                 {loading ? (
                   <div className="flex justify-center py-12">
-                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-orange-500" />
+                    <LoadingFire size="sm" />
                   </div>
                 ) : stacks.length > 0 ? (
                   <div className="space-y-4">
@@ -461,7 +459,7 @@ export default function Dashboard() {
 
                 {loading ? (
                   <div className="flex justify-center py-12">
-                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-orange-500" />
+                    <LoadingFire size="sm" />
                   </div>
                 ) : notifications.length > 0 ? (
                   <div className="space-y-2">
@@ -581,22 +579,7 @@ export default function Dashboard() {
                   </div>
                 </Card>
 
-                <Card className="p-6 bg-surface/50 border-white/10">
-                  <h3 className="text-lg font-semibold mb-6">Notification Preferences</h3>
-
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">Email Notifications</p>
-                        <p className="text-sm text-zinc-500">Receive updates about your stacks</p>
-                      </div>
-                      <Switch
-                        checked={emailNotifications}
-                        onCheckedChange={setEmailNotifications}
-                      />
-                    </div>
-                  </div>
-                </Card>
+                <EmailPreferences />
 
                 <Card className="p-6 bg-surface/50 border-red-500/20">
                   <h3 className="text-lg font-semibold mb-4 text-red-400">Danger Zone</h3>

@@ -9,6 +9,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { AuthDialog } from "@/components/AuthDialog";
 import { generateRoast } from '@/lib/generateRoast';
+import { PersonaSelector } from "@/components/PersonaSelector";
+import { getRandomPersona, type PersonaKey } from "@/lib/roastPersonas";
 import confetti from "canvas-confetti";
 
 interface Tool {
@@ -35,6 +37,7 @@ export function SubmitStackDialog({ open, onOpenChange }: SubmitStackDialogProps
     stackName: string;
     tools: Tool[];
   } | null>(null);
+  const [selectedPersona, setSelectedPersona] = useState<PersonaKey | 'random'>('random');
   
   const { toast } = useToast();
   const { user, profile } = useAuth();
@@ -151,9 +154,13 @@ export function SubmitStackDialog({ open, onOpenChange }: SubmitStackDialogProps
         console.log('Starting AI roast generation for stack:', name);
         console.log('Tools:', tools.map(t => t.name));
         
+        // Determine which persona to use
+        const personaToUse = selectedPersona === 'random' ? getRandomPersona() : selectedPersona;
+        
         const { roastText, burnScore, persona } = await generateRoast(
           name,
-          tools.map(t => ({ name: t.name, category: t.category }))
+          tools.map(t => ({ name: t.name, category: t.category })),
+          personaToUse
         );
 
         console.log('Roast generated successfully:', { roastText: roastText.substring(0, 100), burnScore, persona });
@@ -336,8 +343,24 @@ export function SubmitStackDialog({ open, onOpenChange }: SubmitStackDialogProps
               </div>
             </div>
 
+            {/* Persona Selection */}
+            <div className="space-y-2 pt-4 border-t border-zinc-800">
+              <Label className="flex items-center gap-2">
+                <Flame className="w-4 h-4 text-orange-500" />
+                Choose Your Roaster
+              </Label>
+              <p className="text-xs text-muted-foreground mb-2">
+                Select who will roast your stack. Each persona has a unique style!
+              </p>
+              <PersonaSelector
+                selectedPersona={selectedPersona}
+                onSelect={setSelectedPersona}
+                disabled={loading}
+              />
+            </div>
+
             {/* Submit Button */}
-            <div className="flex justify-end gap-3">
+            <div className="flex justify-end gap-3 pt-4">
               <Button
                 variant="outline"
                 onClick={() => onOpenChange(false)}
@@ -347,8 +370,10 @@ export function SubmitStackDialog({ open, onOpenChange }: SubmitStackDialogProps
               <Button
                 onClick={handleSubmit}
                 disabled={loading || !stackName.trim() || selectedTools.length === 0}
+                className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
               >
-                {loading ? "Submitting..." : user ? "Submit Stack" : "Sign In & Submit"}
+                <Flame className="w-4 h-4 mr-2" />
+                {loading ? "Roasting..." : user ? "Submit & Roast" : "Sign In & Submit"}
               </Button>
             </div>
           </div>

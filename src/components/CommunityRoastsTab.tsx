@@ -266,14 +266,13 @@ export function CommunityRoastsTab({ stackId }: CommunityRoastsTabProps) {
   return (
     <div className="space-y-6">
       {/* Header with Sort */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Flame className="w-5 h-5 text-orange-400" />
-          <h3 className="text-xl font-bold">Community Roasts</h3>
-          <span className="text-sm text-zinc-500">({roasts.length})</span>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Flame className="w-4 h-4" />
+          <span>{roasts.length} {roasts.length === 1 ? 'roast' : 'roasts'}</span>
         </div>
 
-        <div className="flex items-center gap-1 bg-zinc-900 rounded-lg p-1">
+        <div className="flex items-center gap-1 bg-muted rounded-lg p-1 border border-border">
           <Button
             variant={sortBy === 'top' ? 'secondary' : 'ghost'}
             size="sm"
@@ -294,16 +293,16 @@ export function CommunityRoastsTab({ stackId }: CommunityRoastsTabProps) {
       </div>
 
       {/* Submit Roast */}
-      <div className="border border-zinc-800 rounded-lg p-4 bg-zinc-900/50">
+      <div className="border border-border rounded-lg p-4 bg-muted/50">
         <Textarea
           placeholder="Drop your roast here... 🔥 Be creative, be savage!"
           value={newRoast}
           onChange={(e) => setNewRoast(e.target.value)}
           rows={3}
-          className="resize-none mb-3 bg-transparent border-zinc-700"
+          className="resize-none mb-3 bg-transparent border-border"
         />
         <div className="flex items-center justify-between">
-          <span className="text-xs text-zinc-500">
+          <span className="text-xs text-muted-foreground">
             {newRoast.length}/500 characters • Earn +2 logs for roasting
           </span>
           <Button 
@@ -327,7 +326,7 @@ export function CommunityRoastsTab({ stackId }: CommunityRoastsTabProps) {
           {roasts.map((roast, index) => (
             <div
               key={roast.id}
-              className="border border-zinc-800 rounded-lg p-4 hover:border-orange-500/30 transition-colors bg-zinc-900/30"
+              className="border border-border rounded-lg p-4 hover:border-orange-500/30 transition-colors bg-card/50"
             >
               <div className="flex gap-4">
                 {/* Vote Section */}
@@ -336,18 +335,18 @@ export function CommunityRoastsTab({ stackId }: CommunityRoastsTabProps) {
                     variant="ghost"
                     size="sm"
                     onClick={() => handleVote(roast.id, "up")}
-                    className={`p-1 h-8 w-8 ${roast.user_vote === "up" ? "text-orange-400 bg-orange-400/10" : "text-zinc-500"}`}
+                    className={`p-1 h-8 w-8 ${roast.user_vote === "up" ? "text-orange-500 bg-orange-500/10" : "text-muted-foreground"}`}
                   >
                     <ArrowUp className="w-5 h-5" />
                   </Button>
-                  <span className={`font-bold text-lg ${getScore(roast) > 0 ? 'text-orange-400' : getScore(roast) < 0 ? 'text-blue-400' : 'text-zinc-500'}`}>
+                  <span className={`font-bold text-lg ${getScore(roast) > 0 ? 'text-orange-500' : getScore(roast) < 0 ? 'text-blue-500' : 'text-muted-foreground'}`}>
                     {getScore(roast)}
                   </span>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => handleVote(roast.id, "down")}
-                    className={`p-1 h-8 w-8 ${roast.user_vote === "down" ? "text-blue-400 bg-blue-400/10" : "text-zinc-500"}`}
+                    className={`p-1 h-8 w-8 ${roast.user_vote === "down" ? "text-blue-500 bg-blue-500/10" : "text-muted-foreground"}`}
                   >
                     <ArrowDown className="w-5 h-5" />
                   </Button>
@@ -357,7 +356,7 @@ export function CommunityRoastsTab({ stackId }: CommunityRoastsTabProps) {
                 <div className="flex-1 min-w-0">
                   {/* Rank Badge for top 3 */}
                   {index < 3 && sortBy === 'top' && (
-                    <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gradient-to-r from-orange-500/20 to-red-500/20 text-orange-400 text-xs mb-2">
+                    <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gradient-to-r from-orange-500/20 to-red-500/20 text-orange-500 text-xs mb-2">
                       <Award className="w-3 h-3" />
                       #{index + 1} Top Roast
                     </div>
@@ -369,25 +368,25 @@ export function CommunityRoastsTab({ stackId }: CommunityRoastsTabProps) {
                       <AvatarImage src={roast.profiles.avatar_url} />
                       <AvatarFallback>{roast.profiles.username[0]?.toUpperCase()}</AvatarFallback>
                     </Avatar>
-                    <span className="font-medium text-sm">@{roast.profiles.username}</span>
-                    <span className="text-xs text-zinc-500">
+                    <span className="font-medium text-sm text-foreground">@{roast.profiles.username}</span>
+                    <span className="text-xs text-muted-foreground">
                       • {roast.profiles.karma_points} logs
                     </span>
-                    <span className="text-xs text-zinc-600">
+                    <span className="text-xs text-muted-foreground">
                       • {formatDistanceToNow(new Date(roast.created_at), { addSuffix: true })}
                     </span>
                   </div>
 
                   {/* Roast Text */}
-                  <p className="text-zinc-200 text-lg leading-relaxed">{roast.roast_text}</p>
+                  <p className="text-foreground text-lg leading-relaxed">{roast.roast_text}</p>
 
                   {/* Comment Button */}
-                  <div className="flex items-center gap-4 mt-3 pt-3 border-t border-zinc-800/50">
+                  <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border">
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => toggleComments(roast.id)}
-                      className="text-zinc-500 hover:text-zinc-300 gap-2"
+                      className="text-muted-foreground hover:text-foreground gap-2"
                     >
                       <MessageCircle className="w-4 h-4" />
                       {roast.comment_count || 0} {roast.comment_count === 1 ? 'comment' : 'comments'}
@@ -406,7 +405,7 @@ export function CommunityRoastsTab({ stackId }: CommunityRoastsTabProps) {
                           toggleComments(roast.id);
                         }
                       }}
-                      className="text-zinc-500 hover:text-zinc-300"
+                      className="text-muted-foreground hover:text-foreground"
                     >
                       Reply
                     </Button>
@@ -417,7 +416,7 @@ export function CommunityRoastsTab({ stackId }: CommunityRoastsTabProps) {
                     <div className="mt-3 space-y-3">
                       {/* Reply Input */}
                       {(replyingTo === roast.id || (roast.comment_count || 0) === 0) && (
-                        <div className="flex items-start gap-2 p-3 bg-zinc-800/30 rounded-lg">
+                        <div className="flex items-start gap-2 p-3 bg-muted/50 rounded-lg">
                           <Avatar className="w-6 h-6 mt-1">
                             <AvatarFallback className="text-xs">
                               {user?.email?.[0]?.toUpperCase() || '?'}
@@ -432,7 +431,7 @@ export function CommunityRoastsTab({ stackId }: CommunityRoastsTabProps) {
                                 setReplyText(e.target.value);
                               }}
                               onFocus={() => setReplyingTo(roast.id)}
-                              className="bg-transparent border-zinc-700 text-sm h-8"
+                              className="bg-transparent border-border text-sm h-8"
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter' && !e.shiftKey) {
                                   e.preventDefault();
@@ -454,7 +453,7 @@ export function CommunityRoastsTab({ stackId }: CommunityRoastsTabProps) {
 
                       {/* Existing Comments */}
                       {roast.comments && roast.comments.length > 0 && (
-                        <div className="space-y-2 pl-2 border-l-2 border-zinc-800">
+                        <div className="space-y-2 pl-2 border-l-2 border-border">
                           {roast.comments.map((comment) => (
                             <div key={comment.id} className="flex items-start gap-2 py-2">
                               <Avatar className="w-5 h-5">
@@ -465,14 +464,14 @@ export function CommunityRoastsTab({ stackId }: CommunityRoastsTabProps) {
                               </Avatar>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
-                                  <span className="text-sm font-medium text-zinc-300">
+                                  <span className="text-sm font-medium text-foreground">
                                     @{comment.profiles.username}
                                   </span>
-                                  <span className="text-xs text-zinc-600">
+                                  <span className="text-xs text-muted-foreground">
                                     {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
                                   </span>
                                 </div>
-                                <p className="text-sm text-zinc-400 mt-0.5">{comment.comment_text}</p>
+                                <p className="text-sm text-muted-foreground mt-0.5">{comment.comment_text}</p>
                               </div>
                             </div>
                           ))}
@@ -485,7 +484,7 @@ export function CommunityRoastsTab({ stackId }: CommunityRoastsTabProps) {
                           variant="ghost"
                           size="sm"
                           onClick={() => setReplyingTo(roast.id)}
-                          className="text-zinc-500 hover:text-zinc-300 text-xs"
+                          className="text-muted-foreground hover:text-foreground text-xs"
                         >
                           + Add a comment
                         </Button>
@@ -498,10 +497,10 @@ export function CommunityRoastsTab({ stackId }: CommunityRoastsTabProps) {
           ))}
         </div>
       ) : (
-        <div className="text-center py-12 border border-dashed border-zinc-800 rounded-lg">
-          <Flame className="w-12 h-12 mx-auto mb-4 text-zinc-700" />
-          <p className="text-zinc-500 mb-2">No community roasts yet</p>
-          <p className="text-sm text-zinc-600">Be the first to roast this stack!</p>
+        <div className="text-center py-12 border border-dashed border-border rounded-lg">
+          <Flame className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+          <p className="text-muted-foreground mb-2">No community roasts yet</p>
+          <p className="text-sm text-muted-foreground">Be the first to roast this stack!</p>
         </div>
       )}
     </div>

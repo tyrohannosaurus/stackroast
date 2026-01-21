@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Navbar } from "@/components/Navbar";
 import { Hero } from "@/components/Hero";
 import { RoastFeed } from "@/components/RoastFeed";
 import { Footer } from "@/components/Footer";
@@ -8,14 +7,22 @@ import { CommandPalette } from "@/components/CommandPalette";
 import { SubmitStackDialog } from "@/components/SubmitStackDialog";
 import { AuthDialog } from "@/components/AuthDialog";
 import { Leaderboards } from "@/components/Leaderboards";
+import { RepoRoastDialog } from "@/components/RepoRoastDialog";
+import { VisualRoastDialog } from "@/components/VisualRoastDialog";
+import { RoastFriendDialog } from "@/components/RoastFriendDialog";
+import { GlobalSearch } from "@/components/GlobalSearch";
 
 export default function Index() {
   const [submitDialogOpen, setSubmitDialogOpen] = useState(false);
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
+  const [repoDialogOpen, setRepoDialogOpen] = useState(false);
+  const [visualRoastOpen, setVisualRoastOpen] = useState(false);
+  const [roastFriendOpen, setRoastFriendOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-canvas">
-      <Navbar />
+      
       
       {/* Hero Section */}
       <section className="container mx-auto px-4 pt-32 pb-16">
@@ -50,12 +57,22 @@ export default function Index() {
       {/* Command Palette (Cmd+K) */}
       <CommandPalette 
         onSubmitStack={() => setSubmitDialogOpen(true)}
+        onImportGithub={() => setRepoDialogOpen(true)}
+        onVisualRoast={() => setVisualRoastOpen(true)}
+        onRoastFriend={() => setRoastFriendOpen(true)}
         onSignIn={() => setAuthDialogOpen(true)}
+        onOpenSearch={() => setSearchOpen(true)}
       />
+
+      {/* Global Search (from Command Palette) */}
+      <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
 
       {/* Dialogs triggered by Command Palette */}
       <SubmitStackDialog open={submitDialogOpen} onOpenChange={setSubmitDialogOpen} />
       <AuthDialog open={authDialogOpen} onOpenChange={setAuthDialogOpen} />
+      <RepoRoastDialog open={repoDialogOpen} onOpenChange={setRepoDialogOpen} />
+      <VisualRoastDialog open={visualRoastOpen} onOpenChange={setVisualRoastOpen} />
+      <RoastFriendDialog open={roastFriendOpen} onOpenChange={setRoastFriendOpen} />
     </div>
   );
 }

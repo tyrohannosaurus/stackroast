@@ -252,7 +252,7 @@ export function Leaderboards() {
   };
 
   return (
-    <Card className="p-4 bg-surface/50 border-white/10">
+    <Card id="leaderboards" className="p-4 bg-surface/50 border-white/10">
       <div className="flex items-center gap-2 mb-4">
         <Trophy className="w-5 h-5 text-yellow-400" />
         <h3 className="font-semibold">Leaderboards</h3>

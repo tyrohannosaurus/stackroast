@@ -6,9 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Flame, ExternalLink, ArrowLeft, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
-import { StackTabs } from "@/components/StackTabs";
+import { StackThreeColumnLayout } from "@/components/StackThreeColumnLayout";
+import { LoadingFire } from "@/components/LoadingFire";
 import { FixMyStackButton } from "@/components/FixMyStackButton";
 import CloneStackButton from "@/components/CloneStackButton";
+import { ShareButton } from "@/components/ShareButton";
 import type { Stack as StackType } from "@/types";
 
 interface Stack {
@@ -24,6 +26,7 @@ interface StackItem {
   tool: {
     id: string;
     name: string;
+    slug?: string;
     logo_url: string;
     category: string;
     base_price: number;
@@ -32,11 +35,19 @@ interface StackItem {
   };
 }
 
+interface AIRoast {
+  roast_text: string;
+  burn_score: number;
+  persona: string;
+}
+
 export default function Stack() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const [stack, setStack] = useState<Stack | null>(null);
   const [items, setItems] = useState<StackItem[]>([]);
+  const [aiRoast, setAiRoast] = useState<AIRoast | null>(null);
+  const [username, setUsername] = useState<string>("anonymous");
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
@@ -82,7 +93,36 @@ export default function Stack() {
         }
 
         setStack(stackData);
-        setItems(itemsData || []);
+        // Transform the nested tool structure to match StackItem interface
+        const transformedItems: StackItem[] = (itemsData || []).map((item: any) => ({
+          id: item.id,
+          tool: item.tool as StackItem['tool'],
+        }));
+        setItems(transformedItems);
+
+        // Fetch AI roast for sharing
+        const { data: roastData } = await supabase
+          .from("ai_roasts")
+          .select("roast_text, burn_score, persona")
+          .eq("stack_id", stackData.id)
+          .maybeSingle();
+        
+        if (roastData) {
+          setAiRoast(roastData);
+        }
+
+        // Fetch username if profile exists
+        if (stackData.profile_id) {
+          const { data: profileData } = await supabase
+            .from("profiles")
+            .select("username")
+            .eq("id", stackData.profile_id)
+            .maybeSingle();
+          
+          if (profileData?.username) {
+            setUsername(profileData.username);
+          }
+        }
 
         // Increment view count
         await supabase.rpc("increment_stack_views", {
@@ -111,6 +151,7 @@ export default function Stack() {
   // Transform stack data for FixMyStackButton
   const transformedStack: StackType | null = stack ? {
     id: stack.id,
+    slug: stack.slug,
     user_id: '',
     title: stack.name,
     tools: items.map(item => ({
@@ -132,18 +173,15 @@ export default function Stack() {
     user: {
       id: '',
       username: 'Anonymous',
-      karma: 0,
+      logs: 0,
       total_tips_received: 0,
-    },
+    } as StackType['user'],
   } : null;
 
   if (loading) {
     return (
       <div className="min-h-screen bg-canvas flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-orange-500 mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading stack...</p>
-        </div>
+        <LoadingFire size="md" text="Loading stack..." />
       </div>
     );
   }
@@ -155,7 +193,7 @@ export default function Stack() {
   return (
     <div className="min-h-screen bg-canvas pb-20">
       {/* Header */}
-      <header className="border-b border-border bg-surface/80 backdrop-blur-xl">
+      <header className="border-b border-border bg-background/80 backdrop-blur-xl">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Button
             variant="ghost"
@@ -173,17 +211,28 @@ export default function Stack() {
       </header>
 
       {/* Content */}
-      <div className="container mx-auto px-4 py-12 max-w-4xl">
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Stack Header */}
         <div className="mb-8">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <h1 className="text-4xl font-bold mb-2 text-foreground">{stack.name}</h1>
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
+            <div className="flex-1">
+              <h1 className="text-3xl md:text-4xl font-bold mb-2 text-foreground">{stack.name}</h1>
               <p className="text-muted-foreground">
                 {items.length} tools • ${totalCost.toFixed(2)}/month
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <ShareButton
+                stackName={stack.name}
+                stackSlug={stack.slug}
+                burnScore={aiRoast?.burn_score || 0}
+                roastPreview={aiRoast?.roast_text}
+                persona={aiRoast?.persona}
+                username={username}
+                toolCount={items.length}
+                variant="outline"
+                showLabel={true}
+              />
               <CloneStackButton
                 tools={items.map(item => ({
                   id: item.tool.id,
@@ -198,6 +247,7 @@ export default function Stack() {
               <Button
                 onClick={copyLink}
                 variant="outline"
+                size="default"
                 className="flex items-center gap-2"
               >
                 {copied ? (
@@ -208,7 +258,7 @@ export default function Stack() {
                 ) : (
                   <>
                     <Copy className="w-4 h-4" />
-                    Share
+                    Copy Link
                   </>
                 )}
               </Button>
@@ -216,85 +266,83 @@ export default function Stack() {
           </div>
         </div>
 
-        {/* Tools Grid */}
-        <div className="mb-12">
-          <h2 className="text-xl font-semibold mb-4 text-foreground">Tech Stack</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {items.map((item) => (
+        {/* Tools Grid & Cost Breakdown - Side by Side */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          {/* Tools Grid - Takes 2 columns */}
+          <div className="lg:col-span-2">
+            <h2 className="text-xl font-semibold mb-4 text-foreground">Tech Stack</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {items.map((item) => (
               <Card
                 key={item.id}
-                className="p-4 bg-surface border-border hover:border-orange-500/50 transition-all shadow-elegant hover:shadow-elegant-hover"
+                className="p-4 bg-card border-border hover:border-orange-500/50 transition-all"
               >
-                <div className="flex items-center gap-4">
-                  <img
-                    src={item.tool.logo_url}
-                    alt={item.tool.name}
-                    className="w-12 h-12 object-contain"
-                  />
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-foreground">{item.tool.name}</h3>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Badge variant="secondary" className="text-xs">
-                        {item.tool.category}
-                      </Badge>
-                      {item.tool.base_price > 0 && (
-                        <span className="text-xs text-muted-foreground">
-                          ${item.tool.base_price}/mo
-                        </span>
-                      )}
+                  <div className="flex items-center gap-4">
+                    <img
+                      src={item.tool.logo_url}
+                      alt={item.tool.name}
+                      className="w-10 h-10 object-contain"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-foreground truncate">{item.tool.name}</h3>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant="secondary" className="text-xs">
+                          {item.tool.category}
+                        </Badge>
+                        {item.tool.base_price > 0 && (
+                          <span className="text-xs text-muted-foreground">
+                            ${item.tool.base_price}/mo
+                          </span>
+                        )}
+                      </div>
                     </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-orange-400 hover:text-orange-500 hover:bg-orange-500/10 flex-shrink-0"
+                      onClick={() => {
+                        supabase.from("affiliate_clicks").insert({
+                          tool_id: item.tool.id,
+                          stack_id: stack.id,
+                          source: "stack_page",
+                        });
+                        window.open(item.tool.affiliate_link || item.tool.website_url, '_blank');
+                      }}
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                    </Button>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="text-orange-400 hover:text-orange-500 hover:bg-orange-500/10"
-                    onClick={() => {
-                      // Track affiliate click
-                      supabase.from("affiliate_clicks").insert({
-                        tool_id: item.tool.id,
-                        stack_id: stack.id,
-                        source: "stack_page",
-                      });
-                      // Open link
-                      window.open(item.tool.affiliate_link || item.tool.website_url, '_blank');
-                    }}
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                  </Button>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </div>
-
-        {/* Cost Breakdown */}
-        <Card className="p-6 bg-surface border-border shadow-elegant mb-8">
-          <h3 className="font-semibold mb-4 text-foreground">Monthly Cost Breakdown</h3>
-          <div className="space-y-2">
-            {items.filter(item => item.tool.base_price > 0).map((item) => (
-              <div key={item.id} className="flex justify-between text-sm">
-                <span className="text-muted-foreground">{item.tool.name}</span>
-                <span className="font-mono text-foreground">${item.tool.base_price.toFixed(2)}</span>
-              </div>
-            ))}
-            <div className="border-t border-border pt-2 mt-2">
-              <div className="flex justify-between font-semibold">
-                <span className="text-foreground">Total</span>
-                <span className="text-orange-500">${totalCost.toFixed(2)}/month</span>
-              </div>
+                </Card>
+              ))}
             </div>
           </div>
-        </Card>
 
-        {/* Fix My Stack Button */}
-        <div className="mb-12">
-          <FixMyStackButton stack={transformedStack} />
+          {/* Cost Breakdown & Fix My Stack - Takes 1 column */}
+          <div className="space-y-6">
+            <Card className="p-6 bg-surface border-border">
+              <h3 className="font-semibold mb-4 text-foreground">Monthly Cost</h3>
+              <div className="space-y-2">
+                {items.filter(item => item.tool.base_price > 0).map((item) => (
+                  <div key={item.id} className="flex justify-between text-sm">
+                    <span className="text-muted-foreground truncate mr-2">{item.tool.name}</span>
+                    <span className="font-mono text-foreground flex-shrink-0">${item.tool.base_price.toFixed(2)}</span>
+                  </div>
+                ))}
+                <div className="border-t border-border pt-2 mt-2">
+                  <div className="flex justify-between font-semibold">
+                    <span className="text-foreground">Total</span>
+                    <span className="text-orange-500">${totalCost.toFixed(2)}/mo</span>
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            <FixMyStackButton stack={transformedStack} />
+          </div>
         </div>
 
-        {/* Tabs for Roasts and Discussion */}
-        <div className="mt-12">
-          <StackTabs stackId={stack.id} />
-        </div>
+        {/* Roasts & Discussion Layout */}
+        <StackThreeColumnLayout stackId={stack.id} stackSlug={stack.slug} />
       </div>
     </div>
   );

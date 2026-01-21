@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MessageSquare, TrendingUp, BarChart3, Flame } from 'lucide-react';
+import { MessageSquare, TrendingUp, Flame } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -53,9 +53,9 @@ export function StackCardFull({ stack, rank }: StackCardFullProps) {
       if (!hasUpvoted) {
         toast.success('Upvoted! 🔥');
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Upvote error:', error);
-      toast.error('Failed to upvote');
+      toast.error('Something went wrong');
     } finally {
       setIsUpvoting(false);
     }
@@ -71,30 +71,28 @@ export function StackCardFull({ stack, rank }: StackCardFullProps) {
 
   return (
     <Card 
-      className="p-6 bg-zinc-50 dark:bg-zinc-900/30 border-zinc-200 dark:border-white/10 hover:border-orange-500/30 transition-all cursor-pointer"
+      className="p-6 bg-card border-border hover:border-orange-500/50 transition-all cursor-pointer group"
       onClick={handleCardClick}
     >
       {/* Rank Badge */}
-      {rank <= 3 && (
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/30 mb-4">
-          <Flame className="w-4 h-4 text-orange-400" />
-          <span className="text-sm font-medium text-orange-300">
-            #{rank} Hottest
-          </span>
+      <div className="flex items-center gap-2 mb-4">
+        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-orange-500 to-red-600 font-bold text-white text-sm">
+          #{rank}
         </div>
-      )}
+        <div className="text-xs text-muted-foreground">Top Stack</div>
+      </div>
 
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
-          <Avatar>
+          <Avatar className="w-10 h-10">
             <AvatarImage src={stack.user.avatar_url} alt={stack.user.username} />
             <AvatarFallback>{stack.user.username[0]?.toUpperCase()}</AvatarFallback>
           </Avatar>
           <div>
             <Link 
-              to={`/user/${stack.user.username}`}
-              className="font-medium text-foreground hover:text-orange-400 transition-colors"
+              to={`/@${stack.user.username}`}
+              className="font-medium text-foreground hover:text-orange-500 transition-colors"
             >
               @{stack.user.username}
             </Link>
@@ -115,37 +113,26 @@ export function StackCardFull({ stack, rank }: StackCardFullProps) {
 
       {/* Tools */}
       <div className="flex flex-wrap gap-2 mb-4">
-        {stack.tools.slice(0, 6).map((tool, index) => (
+        {stack.tools.slice(0, 6).map((tool) => (
           <div 
-            key={tool.id || `tool-${index}`}
-            className="px-3 py-1 rounded-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-white/10 text-sm flex items-center gap-2 text-foreground"
+            key={tool.id}
+            className="px-3 py-1 rounded-full bg-muted/50 border border-border text-sm flex items-center gap-2"
           >
-            {tool.logo_url ? (
-              <img 
-                src={tool.logo_url} 
-                alt={tool.name || 'Tool'} 
-                className="w-4 h-4 object-contain"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
-                }}
-              />
-            ) : (
-              <div className="w-4 h-4 rounded bg-orange-500/20 flex items-center justify-center text-[10px] text-orange-500 font-bold">
-                {(tool.name || '?')[0]?.toUpperCase()}
-              </div>
+            {tool.logo_url && (
+              <img src={tool.logo_url} alt={tool.name} className="w-4 h-4" />
             )}
-            {tool.name || 'Unknown Tool'}
+            {tool.name}
           </div>
         ))}
         {stack.tools.length > 6 && (
-          <div className="px-3 py-1 rounded-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-white/10 text-sm text-muted-foreground">
+          <div className="px-3 py-1 rounded-full bg-muted/50 border border-border text-sm text-muted-foreground">
             +{stack.tools.length - 6} more
           </div>
         )}
       </div>
 
-      {/* FULL AI ROAST */}
-      <div className="bg-white dark:bg-zinc-800 rounded-lg p-4 mb-4 border border-zinc-200 dark:border-white/10">
+      {/* Full AI Roast */}
+      <div className="bg-muted/50 rounded-lg p-4 mb-4 border border-border">
         <div className="flex items-center gap-2 mb-2">
           <Flame className="w-4 h-4 text-orange-400" />
           <span className="text-sm font-medium text-orange-400">AI Roast</span>
@@ -167,8 +154,7 @@ export function StackCardFull({ stack, rank }: StackCardFullProps) {
             {stack.comment_count}
           </span>
           <span className="flex items-center gap-1">
-            <BarChart3 className="w-4 h-4" />
-            {stack.view_count}
+            👁 {stack.view_count}
           </span>
         </div>
 
@@ -177,29 +163,13 @@ export function StackCardFull({ stack, rank }: StackCardFullProps) {
             tools={stack.tools.map(tool => ({
               id: tool.id,
               name: tool.name,
-              affiliate_url: tool.affiliate_url,
+              affiliate_url: (tool as any).affiliate_url,
               logo_url: tool.logo_url,
             }))}
             stackName={stack.title}
-            variant="default"
+            variant="ghost"
             size="sm"
           />
-          <Button 
-            variant={hasUpvoted ? "default" : "outline"} 
-            size="sm"
-            onClick={handleUpvote}
-            disabled={isUpvoting}
-            className={hasUpvoted ? "bg-orange-500 hover:bg-orange-600" : ""}
-          >
-            <TrendingUp className={`w-4 h-4 mr-1 ${isUpvoting ? 'animate-pulse' : ''}`} />
-            {hasUpvoted ? 'Upvoted' : 'Upvote'}
-          </Button>
-          <Button variant="ghost" size="sm" asChild>
-            <Link to={`/stack/${stack.slug}`}>
-              <MessageSquare className="w-4 h-4 mr-1" />
-              Discuss
-            </Link>
-          </Button>
         </div>
       </div>
     </Card>

@@ -1,11 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Flame, RefreshCw, Share2, Download } from "lucide-react";
-import { generateRoast } from "@/lib/generateRoast";
+import { generateRoastStreaming } from "@/lib/generateRoast";
 import { BurnCardDialog } from "@/components/BurnCard";
 import { LoadingFire } from "@/components/LoadingFire";
+import { PersonaSelector } from "@/components/PersonaSelector";
+import { getRandomPersona, type PersonaKey } from "@/lib/roastPersonas";
+import { sendRoastNotificationEmail } from "@/lib/emailService";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface AIRoast {
   roast_text: string;
@@ -25,11 +29,16 @@ interface AIRoastTabProps {
 }
 
 export function AIRoastTab({ stackId, stackSlug }: AIRoastTabProps) {
+  const { user } = useAuth();
   const [aiRoast, setAiRoast] = useState<AIRoast | null>(null);
   const [stackInfo, setStackInfo] = useState<StackInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [burnCardOpen, setBurnCardOpen] = useState(false);
+  const [selectedPersona, setSelectedPersona] = useState<PersonaKey | 'random'>('random');
+  const [streamingText, setStreamingText] = useState<string>('');
+  const [streamingPersona, setStreamingPersona] = useState<string>('');
+  const roastContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadAiRoast();
@@ -85,6 +94,12 @@ export function AIRoastTab({ stackId, stackSlug }: AIRoastTabProps) {
 
   const handleGenerateRoast = async () => {
     setGenerating(true);
+    setStreamingText('');
+    setStreamingPersona('');
+    
+    // Clear existing roast while generating
+    setAiRoast(null);
+    
     try {
       const { data: stack, error: stackError } = await supabase
         .from("stacks")
@@ -94,6 +109,7 @@ export function AIRoastTab({ stackId, stackSlug }: AIRoastTabProps) {
 
       if (stackError || !stack) {
         toast.error("Could not find stack information");
+        setGenerating(false);
         return;
       }
 
@@ -104,6 +120,7 @@ export function AIRoastTab({ stackId, stackSlug }: AIRoastTabProps) {
 
       if (itemsError) {
         toast.error("Could not load stack tools");
+        setGenerating(false);
         return;
       }
 
@@ -111,33 +128,80 @@ export function AIRoastTab({ stackId, stackSlug }: AIRoastTabProps) {
 
       if (tools.length === 0) {
         toast.error("No tools found in this stack");
+        setGenerating(false);
         return;
       }
 
-      toast.info("Generating AI roast... This may take a moment.");
+      // Determine which persona to use
+      const personaToUse = selectedPersona === 'random' ? getRandomPersona() : selectedPersona;
 
-      const { roastText, burnScore, persona } = await generateRoast(stack.name, tools);
+      // Use streaming API
+      await generateRoastStreaming(
+        stack.name,
+        tools,
+        {
+          onChunk: (chunk, fullText) => {
+            setStreamingText(fullText);
+            // Auto-scroll to bottom of roast container
+            if (roastContainerRef.current) {
+              roastContainerRef.current.scrollTop = roastContainerRef.current.scrollHeight;
+            }
+          },
+          onComplete: async (result) => {
+            setStreamingPersona(result.persona);
+            
+            // Save to database
+            await supabase.from("ai_roasts").delete().eq("stack_id", stackId);
 
-      await supabase.from("ai_roasts").delete().eq("stack_id", stackId);
+            const { error: insertError } = await supabase.from("ai_roasts").insert({
+              stack_id: stackId,
+              roast_text: result.roastText,
+              burn_score: result.burnScore,
+              persona: result.persona,
+            });
 
-      const { error: insertError } = await supabase.from("ai_roasts").insert({
-        stack_id: stackId,
-        roast_text: roastText,
-        burn_score: burnScore,
-        persona: persona,
-      });
+            if (insertError) {
+              console.error("Failed to save roast:", insertError.message);
+            }
 
-      if (insertError) {
-        toast.error("Failed to save roast: " + insertError.message);
-        return;
-      }
+            // Set final roast state
+            setAiRoast({ 
+              roast_text: result.roastText, 
+              burn_score: result.burnScore, 
+              persona: result.persona 
+            });
+            setStreamingText('');
+            setGenerating(false);
+            toast.success("AI roast generated! 🔥");
 
-      setAiRoast({ roast_text: roastText, burn_score: burnScore, persona });
-      toast.success("AI roast generated successfully! 🔥");
+            // Send email notification if user is logged in
+            if (user?.email && stackInfo) {
+              sendRoastNotificationEmail(
+                user.email,
+                stackInfo.username,
+                stack.name,
+                result.burnScore,
+                result.roastText.substring(0, 150) + '...',
+                stackSlug || stackId,
+                result.persona,
+                user.id
+              ).catch(err => {
+                console.log('Roast notification email not sent:', err);
+              });
+            }
+          },
+          onError: (error) => {
+            console.error("Error generating roast:", error);
+            toast.error(error?.message || "Failed to generate AI roast");
+            setStreamingText('');
+            setGenerating(false);
+          }
+        },
+        personaToUse
+      );
     } catch (error: any) {
       console.error("Error generating roast:", error);
       toast.error(error?.message || "Failed to generate AI roast");
-    } finally {
       setGenerating(false);
     }
   };
@@ -161,9 +225,13 @@ export function AIRoastTab({ stackId, stackSlug }: AIRoastTabProps) {
   };
 
   const getPersonaEmoji = (persona: string) => {
-    if (persona?.toLowerCase().includes('vc') || persona?.toLowerCase().includes('silicon')) return '💼';
-    if (persona?.toLowerCase().includes('rust')) return '🦀';
-    if (persona?.toLowerCase().includes('senior') || persona?.toLowerCase().includes('cynical')) return '👴';
+    const p = persona?.toLowerCase() || '';
+    if (p.includes('vc') || p.includes('silicon')) return '💼';
+    if (p.includes('rust')) return '🦀';
+    if (p.includes('senior') || p.includes('cynical')) return '👴';
+    if (p.includes('linux') || p.includes('purist')) return '🐧';
+    if (p.includes('startup') || p.includes('founder')) return '🚀';
+    if (p.includes('security')) return '🔒';
     return '🤖';
   };
 
@@ -185,25 +253,24 @@ export function AIRoastTab({ stackId, stackSlug }: AIRoastTabProps) {
   return (
     <div className="space-y-6">
       {/* Main AI Roast Card */}
-      <div className="relative overflow-hidden border-2 border-orange-500/50 rounded-xl bg-zinc-100 dark:bg-zinc-900">
+      <div className="relative overflow-hidden border-2 border-orange-500/50 rounded-xl bg-gradient-to-br from-orange-500/10 via-red-500/5 to-transparent">
         {/* Burn Score Badge */}
-        <div className="absolute top-4 right-4">
-          <div className="text-center">
-            <div className={`text-6xl font-bold ${aiRoast ? getBurnScoreColor(aiRoast.burn_score) : 'text-zinc-400 dark:text-zinc-600'}`}>
+        <div className="absolute top-4 right-4 z-10">
+          <div className="text-center bg-card/90 backdrop-blur-sm rounded-lg p-3 border border-orange-500/30">
+            <div className={`text-5xl font-bold ${aiRoast ? getBurnScoreColor(aiRoast.burn_score) : 'text-muted-foreground'}`}>
               {aiRoast ? aiRoast.burn_score : '--'}
             </div>
-            <div className="text-sm text-zinc-500 font-medium">/100 BURN</div>
+            <div className="text-xs text-muted-foreground font-medium">/100 BURN</div>
           </div>
         </div>
 
-        <div className="p-8">
+        <div className="p-6 pr-32">
           {/* Header */}
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-3 rounded-full bg-orange-500/20">
-              <Flame className="w-8 h-8 text-orange-500" />
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 rounded-full bg-orange-500/20">
+              <Flame className="w-6 h-6 text-orange-500" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-foreground">AI Roast</h2>
               {aiRoast && (
                 <p className="text-sm text-muted-foreground">
                   {getPersonaEmoji(aiRoast.persona)} Roasted by {aiRoast.persona}
@@ -213,11 +280,45 @@ export function AIRoastTab({ stackId, stackSlug }: AIRoastTabProps) {
           </div>
 
           {/* Roast Content */}
-          {aiRoast ? (
-            <div className="space-y-6">
-              {/* Inner white card for roast text */}
-              <div className="bg-white dark:bg-zinc-800 rounded-lg p-6 border border-zinc-200 dark:border-zinc-700">
-                <blockquote className="text-lg md:text-xl font-light italic text-zinc-800 dark:text-zinc-200 leading-relaxed border-l-4 border-orange-500 pl-6">
+          {generating && streamingText ? (
+            // Streaming state - show text as it comes in
+            <div className="space-y-4">
+              <div 
+                ref={roastContainerRef}
+                className="bg-card rounded-lg p-5 border border-orange-500/20 max-h-[400px] overflow-y-auto"
+              >
+                {streamingPersona && (
+                  <p className="text-sm text-muted-foreground mb-3">
+                    {getPersonaEmoji(streamingPersona)} Roasting as {streamingPersona}...
+                  </p>
+                )}
+                <blockquote className="text-base md:text-lg font-light italic text-card-foreground leading-relaxed border-l-4 border-orange-500 pl-4">
+                  "{streamingText}
+                  <span className="inline-block w-2 h-5 ml-1 bg-orange-500 animate-pulse" />
+                  "
+                </blockquote>
+              </div>
+              
+              {/* Animated burn meter while generating */}
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Calculating burn intensity...</span>
+                  <span className="text-orange-500 animate-pulse">🔥 ROASTING</span>
+                </div>
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500 animate-pulse"
+                    style={{ width: '60%' }}
+                  />
+                </div>
+              </div>
+            </div>
+          ) : aiRoast ? (
+            // Complete roast state
+            <div className="space-y-4">
+              {/* Roast text */}
+              <div className="bg-card rounded-lg p-5 border border-orange-500/20">
+                <blockquote className="text-base md:text-lg font-light italic text-card-foreground leading-relaxed border-l-4 border-orange-500 pl-4">
                   "{aiRoast.roast_text}"
                 </blockquote>
               </div>
@@ -232,7 +333,7 @@ export function AIRoastTab({ stackId, stackSlug }: AIRoastTabProps) {
                      aiRoast.burn_score >= 40 ? '🔥 WARM' : '❄️ MILD'}
                   </span>
                 </div>
-                <div className="h-3 bg-zinc-300 dark:bg-zinc-700 rounded-full overflow-hidden">
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
                   <div 
                     className="h-full bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500 transition-all duration-500"
                     style={{ width: `${aiRoast.burn_score}%` }}
@@ -240,23 +341,35 @@ export function AIRoastTab({ stackId, stackSlug }: AIRoastTabProps) {
                 </div>
               </div>
             </div>
+          ) : generating ? (
+            // Initial loading state before streaming starts
+            <div className="flex flex-col items-center justify-center py-12">
+              <LoadingFire size="md" text="Warming up the roaster..." />
+            </div>
           ) : (
-            <div className="text-center py-8">
-              <Flame className="w-16 h-16 mx-auto mb-4 text-zinc-400 dark:text-zinc-600" />
-              <p className="text-xl text-muted-foreground mb-2">No AI roast yet</p>
+            // No roast yet state
+            <div className="text-center py-12">
+              <Flame className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
+              <p className="text-lg text-muted-foreground mb-2">No AI roast yet</p>
               <p className="text-sm text-muted-foreground">Click the button below to generate a savage AI roast for this stack</p>
             </div>
           )}
         </div>
 
         {/* Actions */}
-        <div className="border-t border-zinc-200 dark:border-zinc-700 p-4 flex items-center justify-between bg-zinc-200/50 dark:bg-zinc-800/50">
-          <div className="flex items-center gap-2">
+        <div className="border-t border-orange-500/20 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-muted/30">
+          <div className="flex flex-wrap items-center gap-2">
+            <PersonaSelector
+              selectedPersona={selectedPersona}
+              onSelect={setSelectedPersona}
+              disabled={generating}
+            />
             <Button
-              variant="outline"
+              variant="default"
               size="sm"
               onClick={handleGenerateRoast}
               disabled={generating}
+              className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
             >
               <RefreshCw className={`w-4 h-4 mr-2 ${generating ? 'animate-spin' : ''}`} />
               {generating ? 'Generating...' : aiRoast ? 'Regenerate' : 'Generate Roast'}

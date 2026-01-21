@@ -8,6 +8,7 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
+  CommandShortcut,
 } from '@/components/ui/command';
 import { 
   Flame, 
@@ -20,13 +21,29 @@ import {
   LogOut,
   Moon,
   Sun,
+  Github,
+  Eye,
+  Users,
+  Sparkles,
+  TrendingUp,
+  LayoutDashboard,
+  Mail,
+  Copy,
+  ExternalLink,
+  Palette,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 
 interface CommandPaletteProps {
   onSubmitStack?: () => void;
+  onImportGithub?: () => void;
+  onVisualRoast?: () => void;
+  onRoastFriend?: () => void;
   onSignIn?: () => void;
+  onOpenSearch?: () => void;
 }
 
 interface RecentStack {
@@ -35,11 +52,20 @@ interface RecentStack {
   slug: string;
 }
 
-export function CommandPalette({ onSubmitStack, onSignIn }: CommandPaletteProps) {
+export function CommandPalette({ 
+  onSubmitStack, 
+  onImportGithub,
+  onVisualRoast,
+  onRoastFriend,
+  onSignIn,
+  onOpenSearch,
+}: CommandPaletteProps) {
   const [open, setOpen] = useState(false);
   const [recentStacks, setRecentStacks] = useState<RecentStack[]>([]);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user, profile, signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   // Listen for Cmd+K / Ctrl+K
   useEffect(() => {
@@ -48,11 +74,24 @@ export function CommandPalette({ onSubmitStack, onSignIn }: CommandPaletteProps)
         e.preventDefault();
         setOpen((open) => !open);
       }
+      // Additional shortcuts
+      if (e.key === '/' && !e.metaKey && !e.ctrlKey && !isInputFocused()) {
+        e.preventDefault();
+        onOpenSearch?.();
+      }
     };
 
     document.addEventListener('keydown', down);
     return () => document.removeEventListener('keydown', down);
-  }, []);
+  }, [onOpenSearch]);
+
+  // Check if an input element is focused
+  const isInputFocused = () => {
+    const active = document.activeElement;
+    return active instanceof HTMLInputElement || 
+           active instanceof HTMLTextAreaElement ||
+           active?.getAttribute('contenteditable') === 'true';
+  };
 
   // Load recent stacks when dialog opens
   useEffect(() => {
@@ -62,19 +101,48 @@ export function CommandPalette({ onSubmitStack, onSignIn }: CommandPaletteProps)
   }, [open]);
 
   const loadRecentStacks = async () => {
-    const { data } = await supabase
-      .from('stacks')
-      .select('id, name, slug')
-      .eq('is_public', true)
-      .order('created_at', { ascending: false })
-      .limit(5);
+    setLoading(true);
+    try {
+      const { data } = await supabase
+        .from('stacks')
+        .select('id, name, slug')
+        .eq('is_public', true)
+        .order('created_at', { ascending: false })
+        .limit(5);
 
-    setRecentStacks(data || []);
+      setRecentStacks(data || []);
+    } catch (error) {
+      console.error('Error loading recent stacks:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const runCommand = (command: () => void) => {
     setOpen(false);
-    command();
+    // Small delay to allow dialog to close
+    setTimeout(command, 100);
+  };
+
+  const handleCopyCurrentUrl = () => {
+    navigator.clipboard.writeText(window.location.href);
+    toast.success('URL copied to clipboard!');
+  };
+
+  const scrollToLeaderboards = () => {
+    const element = document.getElementById('leaderboards');
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      navigate('/');
+      setTimeout(() => {
+        document.getElementById('leaderboards')?.scrollIntoView({ behavior: 'smooth' });
+      }, 300);
+    }
+  };
+
+  const handleOpenInNewTab = (url: string) => {
+    window.open(url, '_blank');
   };
 
   return (
@@ -83,39 +151,104 @@ export function CommandPalette({ onSubmitStack, onSignIn }: CommandPaletteProps)
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
 
+        {/* Quick Actions */}
+        <CommandGroup heading="Quick Actions">
+          <CommandItem onSelect={() => runCommand(() => onSubmitStack?.())}>
+            <Plus className="mr-2 h-4 w-4 text-orange-500" />
+            <span>Submit Your Stack</span>
+            <CommandShortcut>New</CommandShortcut>
+          </CommandItem>
+          <CommandItem onSelect={() => runCommand(() => onImportGithub?.())}>
+            <Github className="mr-2 h-4 w-4" />
+            <span>Import from GitHub</span>
+          </CommandItem>
+          <CommandItem onSelect={() => runCommand(() => onVisualRoast?.())}>
+            <Eye className="mr-2 h-4 w-4 text-purple-500" />
+            <span>Visual Analysis</span>
+            <CommandShortcut>AI</CommandShortcut>
+          </CommandItem>
+          <CommandItem onSelect={() => runCommand(() => onRoastFriend?.())}>
+            <Users className="mr-2 h-4 w-4 text-orange-400" />
+            <span>Roast a Friend</span>
+          </CommandItem>
+        </CommandGroup>
+
+        <CommandSeparator />
+
         {/* Navigation */}
         <CommandGroup heading="Navigation">
           <CommandItem onSelect={() => runCommand(() => navigate('/'))}>
             <Home className="mr-2 h-4 w-4" />
-            <span>Go to Home</span>
+            <span>Home</span>
+          </CommandItem>
+          <CommandItem onSelect={() => runCommand(() => navigate('/kits'))}>
+            <Sparkles className="mr-2 h-4 w-4 text-orange-500" />
+            <span>Stack Kits</span>
+            <CommandShortcut>New</CommandShortcut>
+          </CommandItem>
+          <CommandItem onSelect={() => runCommand(() => scrollToLeaderboards())}>
+            <TrendingUp className="mr-2 h-4 w-4" />
+            <span>Leaderboards</span>
           </CommandItem>
           {user && (
-            <CommandItem onSelect={() => runCommand(() => navigate(`/user/${user.email?.split('@')[0]}`))}>
-              <User className="mr-2 h-4 w-4" />
-              <span>My Profile</span>
+            <>
+              <CommandItem onSelect={() => runCommand(() => navigate('/dashboard'))}>
+                <LayoutDashboard className="mr-2 h-4 w-4" />
+                <span>Dashboard</span>
+              </CommandItem>
+              <CommandItem onSelect={() => runCommand(() => navigate(`/user/${profile?.username || user.email?.split('@')[0]}`))}>
+                <User className="mr-2 h-4 w-4" />
+                <span>My Profile</span>
+              </CommandItem>
+            </>
+          )}
+        </CommandGroup>
+
+        <CommandSeparator />
+
+        {/* Appearance & Settings */}
+        <CommandGroup heading="Settings">
+          <CommandItem onSelect={() => runCommand(toggleTheme)}>
+            {theme === 'dark' ? (
+              <Sun className="mr-2 h-4 w-4 text-yellow-500" />
+            ) : (
+              <Moon className="mr-2 h-4 w-4 text-blue-500" />
+            )}
+            <span>Toggle {theme === 'dark' ? 'Light' : 'Dark'} Mode</span>
+            <CommandShortcut>Theme</CommandShortcut>
+          </CommandItem>
+          {user && (
+            <CommandItem onSelect={() => runCommand(() => navigate('/dashboard'))}>
+              <Settings className="mr-2 h-4 w-4" />
+              <span>Settings</span>
             </CommandItem>
           )}
         </CommandGroup>
 
         <CommandSeparator />
 
-        {/* Actions */}
-        <CommandGroup heading="Actions">
-          <CommandItem onSelect={() => runCommand(() => onSubmitStack?.())}>
-            <Plus className="mr-2 h-4 w-4" />
-            <span>Submit Your Stack</span>
-            <span className="ml-auto text-xs text-muted-foreground">New</span>
-          </CommandItem>
+        {/* Account */}
+        <CommandGroup heading="Account">
           {!user ? (
             <CommandItem onSelect={() => runCommand(() => onSignIn?.())}>
               <LogIn className="mr-2 h-4 w-4" />
               <span>Sign In</span>
             </CommandItem>
           ) : (
-            <CommandItem onSelect={() => runCommand(() => signOut())}>
-              <LogOut className="mr-2 h-4 w-4" />
-              <span>Sign Out</span>
-            </CommandItem>
+            <>
+              <CommandItem onSelect={() => runCommand(() => signOut())}>
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Sign Out</span>
+              </CommandItem>
+              {profile && (
+                <CommandItem disabled>
+                  <Flame className="mr-2 h-4 w-4 text-orange-400" />
+                  <span className="text-muted-foreground">
+                    {profile.karma_points} logs
+                  </span>
+                </CommandItem>
+              )}
+            </>
           )}
         </CommandGroup>
 
@@ -139,15 +272,30 @@ export function CommandPalette({ onSubmitStack, onSignIn }: CommandPaletteProps)
 
         <CommandSeparator />
 
-        {/* Quick Tips */}
-        <CommandGroup heading="Shortcuts">
-          <CommandItem disabled>
+        {/* Utilities */}
+        <CommandGroup heading="Utilities">
+          <CommandItem onSelect={() => runCommand(handleCopyCurrentUrl)}>
+            <Copy className="mr-2 h-4 w-4" />
+            <span>Copy Current URL</span>
+          </CommandItem>
+          <CommandItem onSelect={() => runCommand(() => onOpenSearch?.())}>
             <Search className="mr-2 h-4 w-4" />
-            <span className="text-muted-foreground">Press</span>
-            <kbd className="ml-2 pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-              <span className="text-xs">⌘</span>K
-            </kbd>
-            <span className="ml-2 text-muted-foreground">to open this menu</span>
+            <span>Open Search</span>
+            <CommandShortcut>/</CommandShortcut>
+          </CommandItem>
+        </CommandGroup>
+
+        <CommandSeparator />
+
+        {/* Help */}
+        <CommandGroup heading="Keyboard Shortcuts">
+          <CommandItem disabled className="cursor-default">
+            <Palette className="mr-2 h-4 w-4 text-muted-foreground" />
+            <span className="text-muted-foreground text-sm">
+              <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs">⌘K</kbd> Command Palette
+              <span className="mx-2">•</span>
+              <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs">/</kbd> Search
+            </span>
           </CommandItem>
         </CommandGroup>
       </CommandList>

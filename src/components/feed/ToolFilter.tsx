@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { X, Filter, ChevronDown, ChevronUp } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { LoadingFire } from '@/components/LoadingFire';
 
 interface Tool {
   id: string;
@@ -112,9 +113,11 @@ export function ToolFilter({ selectedTools, onToolsChange }: ToolFilterProps) {
 
       {/* Expanded Tool Selection */}
       {expanded && (
-        <div className="bg-surface/50 border border-white/10 rounded-lg p-4 mt-2">
+        <div className="bg-card border border-border rounded-lg p-4 mt-2">
           {loading ? (
-            <p className="text-sm text-muted-foreground">Loading tools...</p>
+            <div className="flex justify-center py-4">
+              <LoadingFire size="sm" />
+            </div>
           ) : (
             <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
               {tools.map(tool => {
@@ -126,7 +129,7 @@ export function ToolFilter({ selectedTools, onToolsChange }: ToolFilterProps) {
                     className={`flex flex-col items-center gap-1 p-2 rounded-lg border transition-all ${
                       isSelected
                         ? 'border-orange-500 bg-orange-500/20'
-                        : 'border-white/10 hover:border-white/20 bg-transparent'
+                        : 'border-border hover:border-orange-500/30 bg-transparent'
                     }`}
                     title={tool.name}
                   >

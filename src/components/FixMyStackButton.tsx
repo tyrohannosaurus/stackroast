@@ -81,8 +81,7 @@ export function FixMyStackButton({ stack }: FixMyStackButtonProps) {
       <Button
         onClick={generateSuggestions}
         disabled={loading}
-        variant="outline"
-        className="w-full gap-2 hover:bg-orange-500/10 hover:border-orange-500/50 hover:text-orange-400 transition-all"
+        className="w-full gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white border-0 shadow-lg hover:shadow-orange-500/50 transition-all font-semibold"
       >
         <Lightbulb className="w-4 h-4" />
         {loading ? 'Analyzing Stack...' : 'Fix My Stack'}
@@ -93,9 +92,9 @@ export function FixMyStackButton({ stack }: FixMyStackButtonProps) {
   return (
     <Card className="p-6 bg-gradient-to-br from-orange-500/10 to-amber-500/10 border-orange-500/30">
       <div className="flex items-start gap-3 mb-4">
-        <Lightbulb className="w-5 h-5 text-orange-400 mt-1" />
+        <Lightbulb className="w-5 h-5 text-orange-500 mt-1" />
         <div>
-          <h3 className="font-semibold text-lg">Stack Improvements</h3>
+          <h3 className="font-semibold text-lg text-foreground">Stack Improvements</h3>
           <p className="text-sm text-muted-foreground">
             Upgrade opportunities based on your current stack
           </p>
@@ -111,7 +110,7 @@ export function FixMyStackButton({ stack }: FixMyStackButtonProps) {
           {suggestions.map((suggestion, index) => (
             <div
               key={index}
-              className="p-4 rounded-lg bg-black/20 border border-white/10"
+              className="p-4 rounded-lg bg-card border border-orange-500/20 hover:border-orange-500/40 transition-colors"
             >
               <div className="flex items-start gap-3">
                 <img
@@ -123,23 +122,23 @@ export function FixMyStackButton({ stack }: FixMyStackButtonProps) {
                   }}
                 />
                 <div className="flex-1">
-                  <p className="text-sm text-orange-400 mb-1">
+                  <p className="text-sm text-orange-500 mb-1 font-medium">
                     ⚠️ {suggestion.issue}
                   </p>
-                  <h4 className="font-medium mb-1">{suggestion.tool.name}</h4>
+                  <h4 className="font-medium mb-1 text-foreground">{suggestion.tool.name}</h4>
                   <p className="text-sm text-muted-foreground mb-2">
                     {suggestion.suggestion}
                   </p>
                   <div className="flex items-center gap-4">
                     {suggestion.tool.base_price > 0 && (
-                      <span className="text-sm text-orange-400 font-medium">
+                      <span className="text-sm text-orange-500 font-medium">
                         Starting at ${suggestion.tool.base_price}/mo
                       </span>
                     )}
                     <Button
                       variant="link"
                       size="sm"
-                      className="text-orange-400 hover:text-orange-300 p-0 h-auto"
+                      className="text-orange-500 hover:text-orange-600 p-0 h-auto"
                       onClick={() => trackClick(suggestion.tool.id, suggestion.tool.affiliate_url)}
                     >
                       Learn More <ExternalLink className="w-3 h-3 ml-1" />

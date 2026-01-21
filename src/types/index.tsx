@@ -39,3 +39,18 @@ export interface Stack {
   }
   
   export type SortMode = 'hot' | 'new' | 'top';
+
+  // Roast Invite types for "Roast a Friend" feature
+  export interface RoastInvite {
+    id: string;
+    code: string;
+    sender_id: string | null;
+    sender_name: string;
+    recipient_name: string;
+    custom_message?: string;
+    status: 'pending' | 'completed' | 'expired';
+    stack_id?: string;
+    created_at: string;
+    expires_at: string;
+    completed_at?: string;
+  }

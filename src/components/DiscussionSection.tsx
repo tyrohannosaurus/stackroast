@@ -152,11 +152,11 @@ export function DiscussionSection({ stackId }: DiscussionSectionProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2">
-        <MessageSquare className="w-5 h-5" />
-        <h2 className="text-2xl font-bold">
-          Discussion ({discussions.reduce((acc, d) => acc + 1 + (d.replies?.length || 0), 0)})
-        </h2>
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <MessageSquare className="w-4 h-4" />
+        <span>
+          {discussions.reduce((acc, d) => acc + 1 + (d.replies?.length || 0), 0)} messages
+        </span>
       </div>
 
       {/* Message Input */}
@@ -193,7 +193,7 @@ export function DiscussionSection({ stackId }: DiscussionSectionProps) {
         ))}
 
         {discussions.length === 0 && (
-          <div className="text-center py-12 text-zinc-500">
+          <div className="text-center py-12 text-muted-foreground">
             <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
             <p>No messages yet. Start the conversation!</p>
           </div>
@@ -216,16 +216,16 @@ function DiscussionMessage({
   currentUserId?: string;
 }) {
   return (
-    <div className="border border-zinc-800 rounded-lg p-4 space-y-3">
+    <div className="border border-border rounded-lg p-4 space-y-3 bg-card/50">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-2">
-          <span className="font-semibold">@{discussion.profiles.username}</span>
-          <span className="text-sm text-zinc-500">
+          <span className="font-semibold text-foreground">@{discussion.profiles.username}</span>
+          <span className="text-sm text-muted-foreground">
             {formatDistanceToNow(new Date(discussion.created_at), { addSuffix: true })}
           </span>
           {discussion.is_ai_generated && (
-            <span className="text-xs px-2 py-0.5 bg-orange-500/20 text-orange-400 rounded-full">
+            <span className="text-xs px-2 py-0.5 bg-orange-500/20 text-orange-500 rounded-full">
               AI
             </span>
           )}
@@ -237,16 +237,16 @@ function DiscussionMessage({
             variant="ghost"
             size="sm"
             onClick={() => onVote(discussion.id, "up")}
-            className={discussion.user_vote === "up" ? "text-orange-400" : ""}
+            className={discussion.user_vote === "up" ? "text-orange-500" : "text-muted-foreground"}
           >
             <ArrowUp className="w-4 h-4" />
           </Button>
-          <span className="font-semibold min-w-8 text-center">{discussion.upvotes}</span>
+          <span className="font-semibold min-w-8 text-center text-foreground">{discussion.upvotes}</span>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => onVote(discussion.id, "down")}
-            className={discussion.user_vote === "down" ? "text-blue-400" : ""}
+            className={discussion.user_vote === "down" ? "text-blue-500" : "text-muted-foreground"}
           >
             <ArrowDown className="w-4 h-4" />
           </Button>
@@ -254,7 +254,7 @@ function DiscussionMessage({
       </div>
 
       {/* Message */}
-      <p className="text-zinc-300">{discussion.message}</p>
+      <p className="text-foreground">{discussion.message}</p>
 
       {/* Reply Button */}
       <div className="flex items-center gap-4 text-sm">
@@ -263,7 +263,7 @@ function DiscussionMessage({
           Reply
         </Button>
         {discussion.replies && discussion.replies.length > 0 && (
-          <span className="text-zinc-500">
+          <span className="text-muted-foreground">
             {discussion.replies.length} {discussion.replies.length === 1 ? "reply" : "replies"}
           </span>
         )}
@@ -271,7 +271,7 @@ function DiscussionMessage({
 
       {/* Replies */}
       {discussion.replies && discussion.replies.length > 0 && (
-        <div className="ml-8 space-y-3 mt-4 border-l-2 border-zinc-800 pl-4">
+        <div className="ml-8 space-y-3 mt-4 border-l-2 border-border pl-4">
           {discussion.replies.map((reply) => (
             <DiscussionMessage
               key={reply.id}

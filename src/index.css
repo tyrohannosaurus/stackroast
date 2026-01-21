@@ -196,11 +196,11 @@
 
 @layer components {
   .glass-surface {
-    @apply bg-surface-glass backdrop-blur-md border border-white/5 rounded-xl;
+    @apply bg-surface-glass backdrop-blur-md border border-border-subtle rounded-xl;
   }
   
   .glass-nav {
-    @apply bg-surface-glass/80 backdrop-blur-xl border-b border-white/5;
+    @apply bg-surface-glass/80 backdrop-blur-xl border-b border-border-subtle;
   }
   
   .glow-accent {

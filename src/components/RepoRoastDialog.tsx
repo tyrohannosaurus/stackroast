@@ -1,16 +1,20 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Github, Loader2, Flame, Check, X, AlertCircle } from "lucide-react";
+import { Github, Flame, Check, X, AlertCircle, LogIn } from "lucide-react";
+import { LoadingFire } from "@/components/LoadingFire";
 import { fetchGitHubRepo, parseRepoFiles } from "@/lib/githubParser";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { generateRoast } from "@/lib/generateRoast";
+import { PersonaSelector } from "@/components/PersonaSelector";
+import { getRandomPersona, type PersonaKey } from "@/lib/roastPersonas";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
+import { AuthDialog } from "./AuthDialog";
 
 interface ParsedDependency {
   name: string;
@@ -23,19 +27,32 @@ interface RepoRoastDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-type Step = 'input' | 'parsing' | 'review' | 'submitting' | 'success';
+type Step = 'auth-check' | 'input' | 'parsing' | 'review' | 'submitting' | 'success';
 
 export function RepoRoastDialog({ open, onOpenChange }: RepoRoastDialogProps) {
   const { user } = useAuth();
-  const [step, setStep] = useState<Step>('input');
+  const [step, setStep] = useState<Step>('auth-check');
   const [repoUrl, setRepoUrl] = useState('');
   const [stackName, setStackName] = useState('');
   const [parsedDeps, setParsedDeps] = useState<ParsedDependency[]>([]);
   const [selectedDeps, setSelectedDeps] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const [selectedPersona, setSelectedPersona] = useState<PersonaKey | 'random'>('random');
+
+  // Check auth status when dialog opens
+  useEffect(() => {
+    if (open) {
+      if (user) {
+        setStep('input');
+      } else {
+        setStep('auth-check');
+      }
+    }
+  }, [open, user]);
 
   const resetDialog = () => {
-    setStep('input');
+    setStep(user ? 'input' : 'auth-check');
     setRepoUrl('');
     setStackName('');
     setParsedDeps([]);
@@ -48,7 +65,19 @@ export function RepoRoastDialog({ open, onOpenChange }: RepoRoastDialogProps) {
     onOpenChange(false);
   };
 
+  const handleAuthSuccess = () => {
+    // After successful auth, move to input step
+    setStep('input');
+    setShowAuthDialog(false);
+  };
+
   const handleParseRepo = async () => {
+    if (!user) {
+      toast.error('Please sign in first');
+      setStep('auth-check');
+      return;
+    }
+
     if (!repoUrl.trim()) {
       setError('Please enter a GitHub repository URL');
       return;
@@ -92,7 +121,8 @@ export function RepoRoastDialog({ open, onOpenChange }: RepoRoastDialogProps) {
 
   const handleSubmit = async () => {
     if (!user) {
-      toast.error('Please sign in to submit a stack');
+      toast.error('Please sign in first');
+      setStep('auth-check');
       return;
     }
 
@@ -151,9 +181,12 @@ export function RepoRoastDialog({ open, onOpenChange }: RepoRoastDialogProps) {
 
       // Generate AI roast
       try {
+        const personaToUse = selectedPersona === 'random' ? getRandomPersona() : selectedPersona;
+        
         const { roastText, burnScore, persona } = await generateRoast(
           stackName,
-          selectedDepsArray.map(d => ({ name: d.name, category: d.category }))
+          selectedDepsArray.map(d => ({ name: d.name, category: d.category })),
+          personaToUse
         );
 
         await supabase.from('ai_roasts').insert({
@@ -199,149 +232,195 @@ export function RepoRoastDialog({ open, onOpenChange }: RepoRoastDialogProps) {
   }, {} as Record<string, ParsedDependency[]>);
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Github className="w-5 h-5" />
-            Roast from GitHub
-          </DialogTitle>
-          <DialogDescription>
-            Import your tech stack directly from a GitHub repository
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={handleClose}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Github className="w-5 h-5" />
+              Roast from GitHub
+            </DialogTitle>
+            <DialogDescription>
+              Import your tech stack directly from a GitHub repository
+            </DialogDescription>
+          </DialogHeader>
 
-        {/* Step 1: Input URL */}
-        {step === 'input' && (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="repo-url">GitHub Repository URL</Label>
-              <Input
-                id="repo-url"
-                placeholder="https://github.com/username/repo"
-                value={repoUrl}
-                onChange={(e) => setRepoUrl(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleParseRepo()}
-              />
-              <p className="text-xs text-muted-foreground">
-                We'll analyze package.json, requirements.txt, and other dependency files
+          {/* Step 0: Auth Check */}
+          {step === 'auth-check' && (
+            <div className="space-y-4 py-6">
+              <div className="flex flex-col items-center text-center space-y-4">
+                <div className="w-16 h-16 rounded-full bg-orange-500/20 flex items-center justify-center">
+                  <LogIn className="w-8 h-8 text-orange-500" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Sign In Required</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Sign in to import your GitHub repository and get roasted!
+                  </p>
+                </div>
+                <Button 
+                  onClick={() => setShowAuthDialog(true)}
+                  size="lg"
+                  className="w-full max-w-xs"
+                >
+                  <LogIn className="w-4 h-4 mr-2" />
+                  Sign In / Sign Up
+                </Button>
+                <Button variant="ghost" onClick={handleClose}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 1: Input URL */}
+          {step === 'input' && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="repo-url">GitHub Repository URL</Label>
+                <Input
+                  id="repo-url"
+                  placeholder="https://github.com/username/repo"
+                  value={repoUrl}
+                  onChange={(e) => setRepoUrl(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleParseRepo()}
+                />
+                <p className="text-xs text-muted-foreground">
+                  We'll analyze package.json, requirements.txt, and other dependency files
+                </p>
+              </div>
+
+              {error && (
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  <p className="text-sm">{error}</p>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3">
+                <Button variant="outline" onClick={handleClose}>
+                  Cancel
+                </Button>
+                <Button onClick={handleParseRepo}>
+                  <Github className="w-4 h-4 mr-2" />
+                  Analyze Repository
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 2: Parsing */}
+          {step === 'parsing' && (
+            <div className="flex flex-col items-center justify-center py-12">
+              <LoadingFire size="md" text="Analyzing repository..." />
+            </div>
+          )}
+
+          {/* Step 3: Review */}
+          {step === 'review' && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="stack-name">Stack Name</Label>
+                <Input
+                  id="stack-name"
+                  value={stackName}
+                  onChange={(e) => setStackName(e.target.value)}
+                  placeholder="My Awesome Stack"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Detected Dependencies ({selectedDeps.size} selected)</Label>
+                <div className="max-h-64 overflow-y-auto border border-zinc-800 rounded-lg p-4 space-y-4">
+                  {Object.entries(groupedDeps).map(([category, deps]) => (
+                    <div key={category}>
+                      <p className="text-sm font-medium text-zinc-500 mb-2">{category}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {deps.map((dep) => (
+                          <Badge
+                            key={dep.name}
+                            variant={selectedDeps.has(dep.name) ? "default" : "outline"}
+                            className={`cursor-pointer transition-colors ${
+                              selectedDeps.has(dep.name)
+                                ? 'bg-orange-500/20 text-orange-400 border-orange-500/30'
+                                : 'opacity-50'
+                            }`}
+                            onClick={() => toggleDep(dep.name)}
+                          >
+                            {selectedDeps.has(dep.name) ? (
+                              <Check className="w-3 h-3 mr-1" />
+                            ) : (
+                              <X className="w-3 h-3 mr-1" />
+                            )}
+                            {dep.name}
+                            {dep.version && (
+                              <span className="ml-1 opacity-50">v{dep.version}</span>
+                            )}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Persona Selection */}
+              <div className="space-y-2 pt-4 border-t border-zinc-800">
+                <Label className="flex items-center gap-2">
+                  <Flame className="w-4 h-4 text-orange-500" />
+                  Choose Your Roaster
+                </Label>
+                <PersonaSelector
+                  selectedPersona={selectedPersona}
+                  onSelect={setSelectedPersona}
+                />
+              </div>
+
+              <div className="flex justify-end gap-3">
+                <Button variant="outline" onClick={() => setStep('input')}>
+                  Back
+                </Button>
+                <Button 
+                  onClick={handleSubmit} 
+                  disabled={selectedDeps.size === 0}
+                  className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
+                >
+                  <Flame className="w-4 h-4 mr-2" />
+                  Submit for Roasting
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 4: Submitting */}
+          {step === 'submitting' && (
+            <div className="flex flex-col items-center justify-center py-12">
+              <LoadingFire size="md" text="Generating AI roast 🔥" />
+            </div>
+          )}
+
+          {/* Step 5: Success */}
+          {step === 'success' && (
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mb-4">
+                <Check className="w-8 h-8 text-green-500" />
+              </div>
+              <p className="text-lg font-medium">Stack submitted!</p>
+              <p className="text-sm text-muted-foreground">
+                Redirecting to your roast...
               </p>
             </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
-            {error && (
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400">
-                <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                <p className="text-sm">{error}</p>
-              </div>
-            )}
-
-            <div className="flex justify-end gap-3">
-              <Button variant="outline" onClick={handleClose}>
-                Cancel
-              </Button>
-              <Button onClick={handleParseRepo}>
-                <Github className="w-4 h-4 mr-2" />
-                Analyze Repository
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Step 2: Parsing */}
-        {step === 'parsing' && (
-          <div className="flex flex-col items-center justify-center py-12">
-            <Loader2 className="w-12 h-12 animate-spin text-orange-500 mb-4" />
-            <p className="text-lg font-medium">Analyzing repository...</p>
-            <p className="text-sm text-muted-foreground">
-              Scanning dependency files
-            </p>
-          </div>
-        )}
-
-        {/* Step 3: Review */}
-        {step === 'review' && (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="stack-name">Stack Name</Label>
-              <Input
-                id="stack-name"
-                value={stackName}
-                onChange={(e) => setStackName(e.target.value)}
-                placeholder="My Awesome Stack"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Detected Dependencies ({selectedDeps.size} selected)</Label>
-              <div className="max-h-64 overflow-y-auto border border-zinc-800 rounded-lg p-4 space-y-4">
-                {Object.entries(groupedDeps).map(([category, deps]) => (
-                  <div key={category}>
-                    <p className="text-sm font-medium text-zinc-500 mb-2">{category}</p>
-                    <div className="flex flex-wrap gap-2">
-                      {deps.map((dep) => (
-                        <Badge
-                          key={dep.name}
-                          variant={selectedDeps.has(dep.name) ? "default" : "outline"}
-                          className={`cursor-pointer transition-colors ${
-                            selectedDeps.has(dep.name)
-                              ? 'bg-orange-500/20 text-orange-400 border-orange-500/30'
-                              : 'opacity-50'
-                          }`}
-                          onClick={() => toggleDep(dep.name)}
-                        >
-                          {selectedDeps.has(dep.name) ? (
-                            <Check className="w-3 h-3 mr-1" />
-                          ) : (
-                            <X className="w-3 h-3 mr-1" />
-                          )}
-                          {dep.name}
-                          {dep.version && (
-                            <span className="ml-1 opacity-50">v{dep.version}</span>
-                          )}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setStep('input')}>
-                Back
-              </Button>
-              <Button onClick={handleSubmit} disabled={selectedDeps.size === 0}>
-                <Flame className="w-4 h-4 mr-2" />
-                Submit for Roasting
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Step 4: Submitting */}
-        {step === 'submitting' && (
-          <div className="flex flex-col items-center justify-center py-12">
-            <Loader2 className="w-12 h-12 animate-spin text-orange-500 mb-4" />
-            <p className="text-lg font-medium">Submitting stack...</p>
-            <p className="text-sm text-muted-foreground">
-              Generating AI roast 🔥
-            </p>
-          </div>
-        )}
-
-        {/* Step 5: Success */}
-        {step === 'success' && (
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mb-4">
-              <Check className="w-8 h-8 text-green-500" />
-            </div>
-            <p className="text-lg font-medium">Stack submitted!</p>
-            <p className="text-sm text-muted-foreground">
-              Redirecting to your roast...
-            </p>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
+      {/* Auth Dialog */}
+      <AuthDialog
+        open={showAuthDialog}
+        onOpenChange={setShowAuthDialog}
+        onSuccess={handleAuthSuccess}
+        defaultMode="signup"
+      />
+    </>
   );
 }
