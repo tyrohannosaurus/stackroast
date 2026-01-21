@@ -1,33 +1,61 @@
+import { useState } from "react";
 import { Navbar } from "@/components/Navbar";
 import { Hero } from "@/components/Hero";
-import { LiveTicker } from "@/components/LiveTicker";
-import { RoastBentoGrid } from "@/components/RoastBentoGrid";
+import { RoastFeed } from "@/components/RoastFeed";
+import { Footer } from "@/components/Footer";
+import { FloatingSubmitButton } from "@/components/FloatingSubmitButton";
+import { CommandPalette } from "@/components/CommandPalette";
+import { SubmitStackDialog } from "@/components/SubmitStackDialog";
+import { AuthDialog } from "@/components/AuthDialog";
+import { Leaderboards } from "@/components/Leaderboards";
 
-const Index = () => {
+export default function Index() {
+  const [submitDialogOpen, setSubmitDialogOpen] = useState(false);
+  const [authDialogOpen, setAuthDialogOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-canvas">
       <Navbar />
-      <Hero />
       
-      {/* Live Ticker */}
-      <div className="relative z-10 -mt-16 border-y border-white/5 bg-surface-glass backdrop-blur-md">
-        <div className="container mx-auto">
-          <LiveTicker />
+      {/* Hero Section */}
+      <section className="container mx-auto px-4 pt-32 pb-16">
+        <div className="max-w-4xl mx-auto text-center space-y-8">
+          <Hero />
         </div>
-      </div>
-      
-      <RoastBentoGrid />
-      
+      </section>
+
+      {/* Main Content - Feed with Sidebar */}
+      <section id="roasts-feed" className="container mx-auto px-4 py-12">
+        <div className="flex gap-8 max-w-7xl mx-auto">
+          {/* Main Feed */}
+          <div className="flex-1 max-w-4xl">
+            <RoastFeed />
+          </div>
+
+          {/* Sidebar - Leaderboards */}
+          <aside className="hidden lg:block w-80 flex-shrink-0">
+            <div className="sticky top-24">
+              <Leaderboards />
+            </div>
+          </aside>
+        </div>
+      </section>
+
       {/* Footer */}
-      <footer className="py-12 border-t border-white/5">
-        <div className="container mx-auto px-4 text-center">
-          <p className="text-sm text-muted-foreground">
-            Built with 🔥 by developers who love a good roast
-          </p>
-        </div>
-      </footer>
+      <Footer />
+
+      {/* Floating Submit Button */}
+      <FloatingSubmitButton />
+
+      {/* Command Palette (Cmd+K) */}
+      <CommandPalette 
+        onSubmitStack={() => setSubmitDialogOpen(true)}
+        onSignIn={() => setAuthDialogOpen(true)}
+      />
+
+      {/* Dialogs triggered by Command Palette */}
+      <SubmitStackDialog open={submitDialogOpen} onOpenChange={setSubmitDialogOpen} />
+      <AuthDialog open={authDialogOpen} onOpenChange={setAuthDialogOpen} />
     </div>
   );
-};
-
-export default Index;
+}

@@ -57,7 +57,7 @@ export function Typewriter({
         animate={{ opacity: [1, 0] }}
         transition={{ duration: 0.5, repeat: Infinity, repeatType: "reverse" }}
         className={cn(
-          "inline-block w-[3px] h-[1em] ml-1 bg-violet-500",
+          "inline-block w-[3px] h-[1em] ml-1 bg-orange-500",
           cursorClassName
         )}
       />

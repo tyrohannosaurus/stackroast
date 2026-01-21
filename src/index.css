@@ -1,97 +1,174 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
-
-/* StackRoast Design System - Linear Standard */
+/* StackRoast Design System - Fire & Ash Theme */
 
 @layer base {
   :root {
-    /* Canvas & Surfaces */
+    /* Base: Zinc (Ash) - Zinc-950 */
     --background: 240 10% 3.9%;
-    --foreground: 240 5% 96%;
+    --foreground: 0 0% 98%;
     
-    --card: 240 6% 10%;
-    --card-foreground: 240 5% 96%;
+    /* Card: Zinc-900 (Charcoal) */
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
     
-    --popover: 240 6% 10%;
-    --popover-foreground: 240 5% 96%;
+    /* Primary: Electric Orange (Magma) - Orange-500 */
+    --primary: 24.6 95% 53.1%;
+    --primary-foreground: 60 9.1% 97.8%;
     
-    /* Brand Colors */
-    --primary: 263 70% 50%;
-    --primary-foreground: 0 0% 100%;
+    /* Secondary: Deep Zinc */
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
     
-    --secondary: 240 4% 16%;
-    --secondary-foreground: 240 5% 96%;
+    /* Muted: Ash Grey */
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
     
-    --muted: 240 4% 16%;
-    --muted-foreground: 240 5% 65%;
+    /* Accent: Hot Orange highlight */
+    --accent: 24 95% 53%;
+    --accent-foreground: 0 0% 98%;
     
-    --accent: 263 70% 50%;
-    --accent-foreground: 0 0% 100%;
-    
-    --destructive: 0 62% 50%;
-    --destructive-foreground: 0 0% 100%;
+    /* Destructive: Red (for "Roast" actions) */
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
     
     /* Borders & Focus */
-    --border: 0 0% 100% / 0.1;
-    --input: 240 4% 16%;
-    --ring: 263 70% 50%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 24.6 95% 53.1%; /* Focus rings are now orange */
     
     --radius: 0.75rem;
     
     /* Custom StackRoast Tokens */
-    --canvas: 240 10% 3.9%;
-    --surface: 240 6% 10%;
-    --surface-glass: 240 6% 10% / 0.5;
-    --border-subtle: 0 0% 100% / 0.05;
-    --border-active: 240 4% 26%;
-    --text-primary: 240 5% 96%;
-    --text-secondary: 240 5% 65%;
-    --accent-glow: 263 70% 50% / 0.2;
-    --neon-purple: 263 70% 66%;
-    --electric-blue: 217 91% 60%;
+    --canvas: 240 10% 3.9%; /* Zinc-950 */
+    --surface: 240 5.9% 10%; /* Zinc-900 */
+    --surface-glass: 240 5.9% 10% / 0.5;
+    --border-subtle: 0 0% 100% / 0.1; /* Linear-style glass border */
+    --border-active: 240 3.7% 15.9%;
+    --text-primary: 240 4.8% 95.9%; /* Zinc-100 - crisp headings */
+    --text-secondary: 240 5.2% 63.9%; /* Zinc-400 - smoke/ash body text */
+    --accent-glow: 24.6 95% 53.1% / 0.2; /* Orange glow */
+    --fire-orange: 24.6 95% 53.1%; /* Orange-500 */
+    --fire-red: 0 84.2% 60.2%; /* Red-500 */
+    --ember-amber: 37.7 92.1% 50.2%; /* Amber-500 */
     
-    /* Gradients */
-    --gradient-glow: linear-gradient(135deg, hsl(263 70% 50% / 0.3) 0%, hsl(217 91% 60% / 0.3) 100%);
-    --gradient-border: linear-gradient(135deg, hsl(263 70% 66%), hsl(217 91% 60%), hsl(263 70% 66%));
+    /* Gradients - Fire gradient for primary actions */
+    --gradient-glow: linear-gradient(135deg, hsl(24.6 95% 53.1% / 0.3) 0%, hsl(0 84.2% 60.2% / 0.3) 100%);
+    --gradient-border: linear-gradient(135deg, hsl(24.6 95% 53.1%), hsl(0 84.2% 60.2%), hsl(24.6 95% 53.1%));
+    --gradient-fire: linear-gradient(135deg, hsl(24.6 95% 53.1%) 0%, hsl(0 84.2% 60.2%) 100%);
     
-    /* Shadows */
-    --shadow-glow: 0 0 30px hsl(263 70% 50% / 0.15);
+    /* Shadows - Hot orange glow */
+    --shadow-glow: 0 0 20px hsl(24.6 95% 53.1% / 0.5);
     --shadow-card: 0 4px 30px hsl(0 0% 0% / 0.3);
     
     /* Sidebar (keeping for compatibility) */
     --sidebar-background: 240 10% 3.9%;
-    --sidebar-foreground: 240 5% 65%;
-    --sidebar-primary: 263 70% 50%;
+    --sidebar-foreground: 240 5% 64.9%;
+    --sidebar-primary: 24.6 95% 53.1%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 4% 16%;
-    --sidebar-accent-foreground: 240 5% 96%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 0 0% 98%;
     --sidebar-border: 0 0% 100% / 0.1;
-    --sidebar-ring: 263 70% 50%;
+    --sidebar-ring: 24.6 95% 53.1%;
   }
 
   .dark {
     --background: 240 10% 3.9%;
-    --foreground: 240 5% 96%;
-    --card: 240 6% 10%;
-    --card-foreground: 240 5% 96%;
-    --popover: 240 6% 10%;
-    --popover-foreground: 240 5% 96%;
-    --primary: 263 70% 50%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 24.6 95% 53.1%;
+    --primary-foreground: 60 9.1% 97.8%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 24 95% 53%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 24.6 95% 53.1%;
+    
+    /* Custom StackRoast Tokens - Dark */
+    --canvas: 240 10% 3.9%;
+    --surface: 240 5.9% 10%;
+    --surface-glass: 240 5.9% 10% / 0.5;
+    --border-subtle: 0 0% 100% / 0.1;
+    --text-primary: 240 4.8% 95.9%;
+    --text-secondary: 240 5.2% 63.9%;
+  }
+
+  .light {
+    /* Base: Elegant Warm White */
+    --background: 0 0% 99%;
+    --foreground: 222 47% 11%;
+    
+    /* Card: Pure White with subtle warmth */
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    
+    /* Primary: Electric Orange (Magma) - stays vibrant */
+    --primary: 24.6 95% 53.1%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 240 4% 16%;
-    --secondary-foreground: 240 5% 96%;
-    --muted: 240 4% 16%;
-    --muted-foreground: 240 5% 65%;
-    --accent: 263 70% 50%;
+    
+    /* Secondary: Soft Neutral Gray */
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 222 47% 11%;
+    
+    /* Muted: Elegant Gray */
+    --muted: 240 5% 96%;
+    --muted-foreground: 215 16% 47%;
+    
+    /* Accent: Hot Orange */
+    --accent: 24 95% 53%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 62% 50%;
+    
+    /* Destructive: Red */
+    --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 100% / 0.1;
-    --input: 240 4% 16%;
-    --ring: 263 70% 50%;
+    
+    /* Borders & Focus - Refined */
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 24.6 95% 53.1%;
+    
+    /* Custom StackRoast Tokens - Elegant Light */
+    --canvas: 240 5% 97%;
+    --surface: 0 0% 100%;
+    --surface-glass: 0 0% 100% / 0.9;
+    --border-subtle: 0 0% 0% / 0.08;
+    --border-active: 214 32% 91%;
+    --text-primary: 222 47% 11%;
+    --text-secondary: 215 16% 47%;
+    --accent-glow: 24.6 95% 53.1% / 0.12;
+    
+    /* Shadows - Elegant and Soft */
+    --shadow-glow: 0 0 24px hsl(24.6 95% 53.1% / 0.25);
+    --shadow-card: 0 1px 3px hsl(0 0% 0% / 0.1), 0 1px 2px hsl(0 0% 0% / 0.06);
+    --shadow-card-hover: 0 4px 6px hsl(0 0% 0% / 0.1), 0 2px 4px hsl(0 0% 0% / 0.06);
+    --shadow-card-lg: 0 10px 15px hsl(0 0% 0% / 0.1), 0 4px 6px hsl(0 0% 0% / 0.05);
+    
+    /* Sidebar - Light */
+    --sidebar-background: 0 0% 99%;
+    --sidebar-foreground: 215 16% 47%;
+    --sidebar-primary: 24.6 95% 53.1%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 5% 96%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 0 0% 0% / 0.08;
+    --sidebar-ring: 24.6 95% 53.1%;
   }
 }
 
@@ -143,7 +220,36 @@
   }
   
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-violet-400 to-blue-400;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500;
+  }
+  
+  .btn-fire {
+    @apply bg-gradient-to-r from-orange-500 to-red-500;
+    box-shadow: 0 0 20px rgba(249, 115, 22, 0.5);
+  }
+  
+  .btn-fire:hover {
+    box-shadow: 0 0 30px rgba(249, 115, 22, 0.7);
+  }
+
+  /* Light Mode Card Enhancements */
+  .light .card-elegant,
+  .light [class*="Card"]:not(.no-shadow) {
+    box-shadow: 0 1px 3px hsl(0 0% 0% / 0.1), 0 1px 2px hsl(0 0% 0% / 0.06);
+  }
+
+  .light .card-elegant:hover,
+  .light [class*="Card"]:hover:not(.no-shadow) {
+    box-shadow: 0 4px 6px hsl(0 0% 0% / 0.1), 0 2px 4px hsl(0 0% 0% / 0.06);
+  }
+
+  /* Light Mode Border Enhancements */
+  .light .border-elegant {
+    border-color: hsl(214 32% 91%);
+  }
+
+  .light .border-elegant-hover:hover {
+    border-color: hsl(24.6 95% 53.1%);
   }
 }
 
@@ -154,6 +260,19 @@
   
   .animate-pulse-glow {
     animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  /* Shadow utilities for light mode */
+  .shadow-elegant {
+    box-shadow: 0 1px 3px hsl(0 0% 0% / 0.1), 0 1px 2px hsl(0 0% 0% / 0.06);
+  }
+
+  .shadow-elegant-hover {
+    box-shadow: 0 4px 6px hsl(0 0% 0% / 0.1), 0 2px 4px hsl(0 0% 0% / 0.06);
+  }
+
+  .shadow-elegant-lg {
+    box-shadow: 0 10px 15px hsl(0 0% 0% / 0.1), 0 4px 6px hsl(0 0% 0% / 0.05);
   }
 }
 
@@ -168,6 +287,27 @@
 }
 
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 20px hsl(263 70% 50% / 0.2); }
-  50% { box-shadow: 0 0 40px hsl(263 70% 50% / 0.4); }
+  0%, 100% { box-shadow: 0 0 20px hsl(24.6 95% 53.1% / 0.2); }
+  50% { box-shadow: 0 0 40px hsl(24.6 95% 53.1% / 0.4); }
+}
+
+/* TypeAnimation text styling - force orange gradient */
+.hero-typewriter span {
+  background: linear-gradient(to right, #f97316, #ef4444) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+/* TypeAnimation cursor fix - make the blinking cursor visible */
+.hero-typewriter .type-animation-cursor,
+.hero-typewriter > span > span:last-child,
+.hero-typewriter span[style*="border-right"],
+.hero-typewriter span::after {
+  color: #f97316 !important;
+  -webkit-text-fill-color: #f97316 !important;
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+  border-color: #f97316 !important;
 }

@@ -32,7 +32,7 @@ export function AnimatedBorderButton({
         <span
           className={cn(
             "absolute inset-[-2px] rounded-lg",
-            "bg-gradient-to-r from-violet-500 via-blue-500 to-violet-500",
+            "bg-gradient-to-r from-orange-500 via-red-500 to-orange-500",
             "animate-gradient bg-[length:200%_100%]",
             "opacity-75 group-hover:opacity-100 transition-opacity"
           )}

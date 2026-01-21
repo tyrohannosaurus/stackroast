@@ -1,0 +1,41 @@
+// Database types
+export interface Stack {
+    id: string;
+    slug: string;
+    user_id: string;
+    title: string;
+    tools: Tool[];
+    github_url?: string;
+    burn_score: number;
+    ai_roast_summary?: string;
+    ai_roast_full?: string;
+    total_cost: number;
+    view_count: number;
+    upvote_count: number;
+    comment_count: number;
+    roast_count: number;
+    created_at: string;
+    user: Profile;
+  }
+  
+  export interface Profile {
+    id: string;
+    username: string;
+    avatar_url?: string;
+    bio?: string;
+    github_url?: string;
+    twitter_handle?: string;
+    logs: number;
+    total_tips_received: number;
+  }
+  
+  export interface Tool {
+    id: string;
+    name: string;
+    slug: string;
+    logo_url?: string;
+    category?: string;
+    base_price?: number;
+  }
+  
+  export type SortMode = 'hot' | 'new' | 'top';

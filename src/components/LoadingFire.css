@@ -1,0 +1,180 @@
+.fire-loader {
+  position: relative;
+  width: 120px;
+  height: 140px;
+}
+
+/* Spark at the top */
+.spark {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 8px;
+  height: 8px;
+  background: #ff4500;
+  transform-origin: center;
+  animation: spark 1.5s ease-in-out infinite;
+}
+
+.spark::before {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: inherit;
+  transform: rotate(45deg);
+}
+
+@keyframes spark {
+  0%, 100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+  50% {
+    opacity: 0.3;
+    transform: translateX(-50%) translateY(-10px) scale(0.5);
+  }
+}
+
+/* Flames container */
+.flames {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 80px;
+}
+
+/* Individual flames */
+.flame {
+  position: absolute;
+  bottom: 0;
+  transform-origin: bottom center;
+}
+
+.flame-1 {
+  left: 50%;
+  transform: translateX(-50%) rotate(-10deg);
+  width: 35px;
+  height: 50px;
+  background: linear-gradient(to top, #ffd700, #ffa500);
+  animation: flame1 0.8s ease-in-out infinite alternate;
+}
+
+.flame-2 {
+  left: 50%;
+  transform: translateX(-70%) rotate(-25deg);
+  width: 30px;
+  height: 45px;
+  background: linear-gradient(to top, #ffcc00, #ff8c00);
+  animation: flame2 0.7s ease-in-out infinite alternate;
+  z-index: 1;
+}
+
+.flame-3 {
+  left: 50%;
+  transform: translateX(-30%) rotate(15deg);
+  width: 28px;
+  height: 40px;
+  background: linear-gradient(to top, #ffe066, #ff9500);
+  animation: flame3 0.9s ease-in-out infinite alternate;
+}
+
+@keyframes flame1 {
+  0% {
+    height: 50px;
+    opacity: 1;
+  }
+  100% {
+    height: 55px;
+    opacity: 0.9;
+  }
+}
+
+@keyframes flame2 {
+  0% {
+    height: 45px;
+    transform: translateX(-70%) rotate(-25deg);
+  }
+  100% {
+    height: 48px;
+    transform: translateX(-70%) rotate(-20deg);
+  }
+}
+
+@keyframes flame3 {
+  0% {
+    height: 40px;
+    transform: translateX(-30%) rotate(15deg);
+  }
+  100% {
+    height: 44px;
+    transform: translateX(-30%) rotate(20deg);
+  }
+}
+
+/* Logs */
+.logs {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 30px;
+}
+
+.log {
+  position: absolute;
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(to bottom, #5d4037, #3e2723);
+}
+
+.log-1 {
+  width: 70px;
+  bottom: 5px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-25deg);
+  transform-origin: center;
+}
+
+.log-2 {
+  width: 70px;
+  bottom: 5px;
+  left: 50%;
+  transform: translateX(-50%) rotate(25deg);
+  transform-origin: center;
+}
+
+/* Make flames diamond-shaped like in the reference */
+.flame-1,
+.flame-2,
+.flame-3 {
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+}
+
+/* Glow effect */
+.flames::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50px;
+  height: 30px;
+  background: radial-gradient(ellipse, rgba(255, 165, 0, 0.3) 0%, transparent 70%);
+  animation: glow 1s ease-in-out infinite alternate;
+}
+
+@keyframes glow {
+  0% {
+    opacity: 0.5;
+    transform: translateX(-50%) scale(1);
+  }
+  100% {
+    opacity: 0.8;
+    transform: translateX(-50%) scale(1.1);
+  }
+}
