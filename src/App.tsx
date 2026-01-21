@@ -13,6 +13,7 @@ import NotFound from "./pages/NotFound";
 import UserProfile from "@/pages/UserProfile";
 import RoastMe from "./pages/RoastMe";
 import StackKits from "./pages/StackKits";
+import SavedStacks from "./pages/SavedStacks";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +34,7 @@ function App() {
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/roast-me/:code" element={<RoastMe />} />
               <Route path="/kits" element={<StackKits />} />
+              <Route path="/saved" element={<SavedStacks />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             <Toaster />

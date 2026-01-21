@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { ROAST_PERSONAS, getRandomPersona, type PersonaKey } from './roastPersonas';
+import { AFFILIATE_LINKS, SPONSORED_TOOLS, getAffiliateLink, isSponsoredTool } from '@/data/affiliateLinks';
 
 const apiKey = import.meta.env.VITE_GOOGLE_AI_API_KEY;
 
@@ -12,6 +13,40 @@ const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
 interface Tool {
   name: string;
   category?: string;
+  base_price?: number;
+}
+
+// Helper function to normalize error messages
+function normalizeError(error: any): string {
+  const errorMessage = error?.message || error?.toString() || '';
+  const errorString = JSON.stringify(error || {}).toLowerCase();
+  const fullErrorText = (errorMessage + ' ' + errorString).toLowerCase();
+  
+  // Check for rate limit / quota errors (429 status or quota-related messages)
+  if (
+    error?.status === 429 ||
+    errorMessage.includes('429') ||
+    fullErrorText.includes('quota') ||
+    fullErrorText.includes('rate limit') ||
+    fullErrorText.includes('rate-limit') ||
+    fullErrorText.includes('exceeded your current quota') ||
+    fullErrorText.includes('quota exceeded')
+  ) {
+    return 'Rate limit exceeded. Please try again in a few moments.';
+  }
+  
+  // Check for API key errors
+  if (
+    error?.status === 401 ||
+    fullErrorText.includes('api key') ||
+    fullErrorText.includes('authentication') ||
+    fullErrorText.includes('invalid api key')
+  ) {
+    return 'API key is invalid or missing. Please check your configuration.';
+  }
+  
+  // Return original message for other errors, but clean it up
+  return errorMessage || 'An unexpected error occurred. Please try again.';
 }
 
 interface RoastResult {
@@ -93,7 +128,8 @@ export async function generateRoast(
     };
   } catch (error: any) {
     console.error('Error generating roast:', error);
-    throw new Error(error?.message || 'Failed to generate roast. Please try again.');
+    const normalizedError = normalizeError(error);
+    throw new Error(normalizedError);
   }
 }
 
@@ -141,7 +177,8 @@ export async function generateRoastStreaming(
     });
   } catch (error: any) {
     console.error('Error generating roast (streaming):', error);
-    callbacks.onError(new Error(error?.message || 'Failed to generate roast. Please try again.'));
+    const normalizedError = normalizeError(error);
+    callbacks.onError(new Error(normalizedError));
   }
 }
 
@@ -314,7 +351,8 @@ export async function generateVisualRoast(
     };
   } catch (error: any) {
     console.error('Error generating visual roast:', error);
-    throw new Error(error?.message || 'Failed to analyze image. Please try again.');
+    const normalizedError = normalizeError(error);
+    throw new Error(normalizedError);
   }
 }
 
@@ -379,7 +417,8 @@ export async function generateVisualRoastStreaming(
     });
   } catch (error: any) {
     console.error('Error generating visual roast (streaming):', error);
-    callbacks.onError(new Error(error?.message || 'Failed to analyze image. Please try again.'));
+    const normalizedError = normalizeError(error);
+    callbacks.onError(new Error(normalizedError));
   }
 }
 
@@ -430,4 +469,220 @@ function parseVisualResponse(response: string): {
   });
 
   return { detectedTech, imageAnalysis, roast };
+}
+
+// ============================================
+// AI-POWERED ALTERNATIVE SUGGESTIONS
+// ============================================
+
+export interface WeakTool {
+  tool_name: string;
+  current_cost: string;
+  reason: string;
+  severity: 'high' | 'medium' | 'low';
+  time_waste: string;
+}
+
+export interface AlternativeSuggestion {
+  name: string;
+  reason: string;
+  estimated_cost: string;
+  savings: {
+    money: string;
+    time: string;
+  };
+  priority: number;
+  affiliate_url?: string | null;
+  commission?: number;
+  is_sponsored?: boolean;
+}
+
+export interface AlternativeCategory {
+  category: string;
+  current_tool: string;
+  suggestions: AlternativeSuggestion[];
+}
+
+export interface StackAlternativesResult {
+  weak_tools: WeakTool[];
+  alternatives: AlternativeCategory[];
+  total_savings: {
+    monthly_money: string;
+    yearly_money: string;
+    monthly_hours: string;
+  };
+}
+
+interface UserContext {
+  budget?: string;
+  scale?: string;
+  priorities?: string[];
+}
+
+// Build prompt for generating stack alternatives
+function buildAlternativesPrompt(
+  stackName: string,
+  tools: Tool[],
+  userContext?: UserContext
+): string {
+  const toolsList = tools
+    .map(t => {
+      const cost = t.base_price ? `$${t.base_price}/month` : 'Free';
+      return `- ${t.name}${t.category ? ` (${t.category})` : ''} - ${cost}`;
+    })
+    .join('\n');
+
+  const contextInfo = userContext
+    ? `\nUser Context:\n- Budget: ${userContext.budget || 'Not specified'}\n- Scale: ${userContext.scale || 'Not specified'}\n- Priorities: ${userContext.priorities?.join(', ') || 'Not specified'}`
+    : '';
+
+  return `You are a brutal but accurate tech stack consultant. Analyze this tech stack and identify weak, outdated, or overpriced tools. Then suggest better alternatives with specific cost and time savings.
+
+Stack Name: "${stackName}"
+Tools:
+${toolsList}${contextInfo}
+
+Your task:
+1. Identify 1-3 weak/outdated/overpriced tools from the stack
+2. For each weak tool, suggest 2-3 better alternatives
+3. Calculate realistic savings:
+   - Monthly cost difference (be specific: "$15/month → $5/month")
+   - Time saved (setup time, maintenance hours/month)
+   - Be honest and accurate - don't exaggerate
+4. Rate severity: high (critical issue), medium (could be better), low (minor optimization)
+
+Return ONLY valid JSON in this exact format (no markdown, no code blocks):
+{
+  "weak_tools": [
+    {
+      "tool_name": "Tool Name",
+      "current_cost": "$X/month",
+      "reason": "One-sentence brutal critique explaining why it's weak",
+      "severity": "high|medium|low",
+      "time_waste": "~X hours/month on [specific issue]"
+    }
+  ],
+  "alternatives": [
+    {
+      "category": "category_name",
+      "current_tool": "Weak Tool Name",
+      "suggestions": [
+        {
+          "name": "Alternative Tool Name",
+          "reason": "Why it's better (specific benefits, not generic)",
+          "estimated_cost": "$X/month (free tier available)",
+          "savings": {
+            "money": "$X/month ($Y/year)",
+            "time": "X hours/month (specific benefit)"
+          },
+          "priority": 1
+        }
+      ]
+    }
+  ],
+  "total_savings": {
+    "monthly_money": "$X",
+    "yearly_money": "$Y",
+    "monthly_hours": "X hours"
+  }
+}
+
+Be brutal but fair. Focus on real savings and improvements.`;
+}
+
+// Generate stack alternatives using Gemini AI
+export async function generateStackAlternatives(
+  stackName: string,
+  tools: Tool[],
+  userContext?: UserContext
+): Promise<StackAlternativesResult> {
+  const prompt = buildAlternativesPrompt(stackName, tools, userContext);
+
+  try {
+    if (!genAI) {
+      throw new Error('Google AI API key is not configured. Please set VITE_GOOGLE_AI_API_KEY in your .env file.');
+    }
+
+    console.log('Calling Gemini API for stack alternatives with model: gemini-2.0-flash-exp');
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+
+    if (!text) {
+      throw new Error('Gemini returned empty response');
+    }
+
+    // Parse JSON from response (remove markdown code blocks if present)
+    let jsonText = text.trim();
+    if (jsonText.startsWith('```json')) {
+      jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+    } else if (jsonText.startsWith('```')) {
+      jsonText = jsonText.replace(/```\n?/g, '');
+    }
+
+    const alternatives: StackAlternativesResult = JSON.parse(jsonText);
+
+    // Inject affiliate links into alternatives and prioritize sponsored tools
+    alternatives.alternatives = alternatives.alternatives.map(category => {
+      const sponsoredTool = SPONSORED_TOOLS[category.category.toLowerCase()];
+      
+      return {
+        ...category,
+        suggestions: category.suggestions
+          .map(suggestion => {
+            const affiliateLink = getAffiliateLink(suggestion.name);
+            const isSponsored = isSponsoredTool(suggestion.name, category.category);
+            
+            // If this is the sponsored tool for this category, ensure it's in top 3
+            let priority = suggestion.priority;
+            if (isSponsored && sponsoredTool) {
+              // Sponsored tools get highest priority (1-3 range)
+              priority = Math.min(3, Math.max(1, suggestion.priority));
+            }
+            
+            return {
+              ...suggestion,
+              affiliate_url: affiliateLink?.url || null,
+              commission: affiliateLink?.commission || 0,
+              is_sponsored: isSponsored,
+              priority,
+            };
+          })
+          .sort((a, b) => {
+            // Sort by: sponsored first, then priority
+            if (a.is_sponsored && !b.is_sponsored) return -1;
+            if (!a.is_sponsored && b.is_sponsored) return 1;
+            return a.priority - b.priority;
+          })
+          .slice(0, 3), // Limit to top 3 suggestions per category
+      };
+    });
+
+    return alternatives;
+  } catch (error: any) {
+    console.error('Error generating stack alternatives:', error);
+    
+    // Check for rate limit first
+    const normalizedError = normalizeError(error);
+    if (normalizedError.includes('Rate limit')) {
+      throw new Error(normalizedError);
+    }
+    
+    // If JSON parsing fails, try to extract JSON from the response
+    if (error.message?.includes('JSON') || error.message?.includes('parse')) {
+      const text = error.response?.text() || error.message || '';
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try {
+          const alternatives: StackAlternativesResult = JSON.parse(jsonMatch[0]);
+          return alternatives;
+        } catch (e) {
+          console.error('Failed to parse extracted JSON:', e);
+        }
+      }
+    }
+    
+    throw new Error(normalizedError);
+  }
 }

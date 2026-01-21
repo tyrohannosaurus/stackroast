@@ -11,7 +11,11 @@ import { LoadingFire } from "@/components/LoadingFire";
 import { FixMyStackButton } from "@/components/FixMyStackButton";
 import CloneStackButton from "@/components/CloneStackButton";
 import { ShareButton } from "@/components/ShareButton";
+import { AlternativeSuggestions } from "@/components/AlternativeSuggestions";
+import { SaveStackButton } from "@/components/SaveStackButton";
+import { FeaturedStacks } from "@/components/FeaturedStacks";
 import type { Stack as StackType } from "@/types";
+import type { StackAlternativesResult } from "@/lib/generateRoast";
 
 interface Stack {
   id: string;
@@ -47,27 +51,117 @@ export default function Stack() {
   const [stack, setStack] = useState<Stack | null>(null);
   const [items, setItems] = useState<StackItem[]>([]);
   const [aiRoast, setAiRoast] = useState<AIRoast | null>(null);
+  const [aiAlternatives, setAiAlternatives] = useState<StackAlternativesResult | null>(null);
   const [username, setUsername] = useState<string>("anonymous");
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     async function fetchStack() {
-      if (!slug) return;
+      if (!slug) {
+        console.error("No slug provided");
+        setLoading(false);
+        return;
+      }
 
       try {
-        // Fetch stack
-        const { data: stackData, error: stackError } = await supabase
-          .from("stacks")
-          .select("*")
-          .eq("slug", slug)
-          .single();
-
-        if (stackError || !stackData) {
-          toast.error("Stack not found");
-          navigate("/");
+        console.log("Fetching stack with slug:", slug);
+        
+        // First, let's check if slug exists at all
+        if (!slug || slug.trim() === '') {
+          console.error("Invalid slug provided:", slug);
+          toast.error("Invalid stack URL");
+          setLoading(false);
           return;
         }
+        
+        // Fetch stack by slug first
+        // Note: ai_alternatives column may not exist if migration hasn't been run
+        let { data: stackData, error: stackError } = await supabase
+          .from("stacks")
+          .select("*")
+          .eq("slug", slug.trim())
+          .maybeSingle();
+        
+        // If not found by slug, try finding by ID (in case slug is missing or URL uses ID)
+        if (!stackData && !stackError) {
+          // Check if slug looks like a UUID
+          const isUUID = slug.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+          
+          if (isUUID) {
+            console.log("Trying to find stack by ID instead of slug");
+            const { data: stackById, error: errorById } = await supabase
+              .from("stacks")
+              .select("*")
+              .eq("id", slug.trim())
+              .maybeSingle();
+            
+            if (stackById && !errorById) {
+              stackData = stackById;
+              stackError = null;
+              console.log("Found stack by ID:", stackById.name);
+              
+              // If stack found by ID but has no slug, generate one and update
+              if (!stackData.slug || stackData.slug.trim() === '') {
+                const generatedSlug = stackData.name
+                  .toLowerCase()
+                  .replace(/[^a-z0-9]+/g, '-')
+                  .replace(/^-+|-+$/g, '')
+                  .substring(0, 50) + '-' + stackData.id.substring(0, 8);
+                
+                // Update the stack with generated slug (don't wait for it)
+                supabase
+                  .from("stacks")
+                  .update({ slug: generatedSlug })
+                  .eq("id", stackData.id)
+                  .then(() => {
+                    console.log("Updated stack with generated slug:", generatedSlug);
+                  });
+                
+                stackData.slug = generatedSlug;
+              }
+            }
+          }
+        }
+
+        if (stackError) {
+          console.error("Stack fetch error:", stackError);
+          console.error("Error code:", stackError.code);
+          console.error("Error message:", stackError.message);
+          console.error("Searched slug:", slug);
+          
+          // Debug: List all available slugs
+          const { data: allStacks } = await supabase
+            .from("stacks")
+            .select("slug, name")
+            .limit(10);
+          console.log("Available stacks (first 10):", allStacks);
+          
+          toast.error(`Error loading stack: ${stackError.message}`);
+          setLoading(false);
+          return;
+        }
+
+        if (!stackData) {
+          console.error("Stack data is null for slug:", slug);
+          
+          // Debug: List all available slugs
+          const { data: allStacks } = await supabase
+            .from("stacks")
+            .select("slug, name")
+            .limit(10);
+          console.log("Available stacks (first 10):", allStacks);
+          console.log("Searched for slug:", slug);
+          
+          toast.error(`Stack "${slug}" not found`);
+          setTimeout(() => {
+            navigate("/");
+          }, 3000);
+          setLoading(false);
+          return;
+        }
+
+        console.log("Stack found successfully:", stackData.name, "slug:", stackData.slug);
 
         // Fetch stack items with tool details
         const { data: itemsData, error: itemsError } = await supabase
@@ -109,6 +203,24 @@ export default function Stack() {
         
         if (roastData) {
           setAiRoast(roastData);
+        }
+
+        // Fetch AI alternatives if they exist
+        // Note: ai_alternatives column may not exist if migration hasn't been run
+        // Try to fetch it separately to avoid breaking if column doesn't exist
+        try {
+          const { data: altData } = await supabase
+            .from("stacks")
+            .select("ai_alternatives")
+            .eq("id", stackData.id)
+            .maybeSingle();
+          
+          if (altData?.ai_alternatives) {
+            setAiAlternatives(altData.ai_alternatives as StackAlternativesResult);
+          }
+        } catch (e) {
+          // Column doesn't exist yet, that's okay
+          console.log("ai_alternatives column not available yet (migration not run)");
         }
 
         // Fetch username if profile exists
@@ -222,6 +334,13 @@ export default function Stack() {
               </p>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
+              <SaveStackButton
+                stackId={stack.id}
+                stackName={stack.name}
+                stackSlug={stack.slug}
+                variant="outline"
+                size="default"
+              />
               <ShareButton
                 stackName={stack.name}
                 stackSlug={stack.slug}
@@ -339,6 +458,27 @@ export default function Stack() {
 
             <FixMyStackButton stack={transformedStack} />
           </div>
+        </div>
+
+        {/* Featured Stacks Sidebar */}
+        <div className="mb-8">
+          <FeaturedStacks limit={1} showCarousel={false} />
+        </div>
+
+        {/* AI Alternatives Section */}
+        <div className="mb-8">
+          <div className="mb-4">
+            <h2 className="text-2xl font-bold text-foreground">Better Alternatives</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              AI-powered suggestions to optimize your stack and save money
+            </p>
+          </div>
+          <AlternativeSuggestions
+            stackId={stack.id}
+            stackName={stack.name}
+            tools={transformedStack.tools}
+            existingAlternatives={aiAlternatives}
+          />
         </div>
 
         {/* Roasts & Discussion Layout */}

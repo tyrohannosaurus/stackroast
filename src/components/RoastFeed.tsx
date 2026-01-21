@@ -97,8 +97,21 @@ export function RoastFeed() {
           const tool_ids = toolsData?.map((item: any) => item.tool_id).filter(Boolean) || [];
           const tools_full = toolsData?.map((item: any) => item.tool).filter(Boolean) || [];
 
+          // Ensure slug exists, generate from name if missing
+          let stackSlug = stack.slug;
+          if (!stackSlug || stackSlug.trim() === '') {
+            // Generate slug from name
+            stackSlug = stack.name
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, '-')
+              .replace(/^-+|-+$/g, '')
+              .substring(0, 50) + '-' + stack.id.substring(0, 8);
+            console.warn(`Stack ${stack.id} missing slug, generated: ${stackSlug}`);
+          }
+
           return {
             ...stack,
+            slug: stackSlug,
             profiles: profile,
             ai_roasts: aiRoastData || null,
             community_roasts_count,

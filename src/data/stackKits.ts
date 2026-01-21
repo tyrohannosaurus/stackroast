@@ -1,6 +1,8 @@
 // Stack Kits - Curated template bundles for common use cases
 // Each kit includes tools, estimated costs, and use case descriptions
 
+import { getAffiliateLink } from './affiliateLinks';
+
 export interface StackKitTool {
   name: string;
   slug: string;
@@ -24,6 +26,11 @@ export interface StackKit {
   bestFor: string[];
   notFor: string[];
   featured?: boolean;
+  totalCommission?: number; // Total commission if all tools are signed up via affiliate links
+  testimonial?: {
+    text: string;
+    author: string;
+  };
 }
 
 export const STACK_KITS: StackKit[] = [
@@ -421,3 +428,19 @@ export const DIFFICULTY_INFO: Record<StackKit['difficulty'], { label: string; co
   'intermediate': { label: 'Intermediate', color: 'text-yellow-500' },
   'advanced': { label: 'Advanced', color: 'text-red-500' },
 };
+
+// Calculate total commission for a kit based on affiliate links
+export function calculateKitCommission(kit: StackKit): number {
+  return kit.tools.reduce((total, tool) => {
+    const affiliateLink = getAffiliateLink(tool.name);
+    return total + (affiliateLink?.commission || 0);
+  }, 0);
+}
+
+// Enhance kits with commission data (call this when needed)
+export function enhanceKitsWithCommissions(kits: StackKit[] = STACK_KITS): StackKit[] {
+  return kits.map(kit => ({
+    ...kit,
+    totalCommission: calculateKitCommission(kit),
+  }));
+}

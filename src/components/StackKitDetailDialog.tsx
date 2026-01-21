@@ -21,6 +21,8 @@ import { type StackKit, DIFFICULTY_INFO, CATEGORY_INFO } from '@/data/stackKits'
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { LoadingFire } from '@/components/LoadingFire';
+import { getAffiliateLink } from '@/data/affiliateLinks';
+import { trackStackKitClone } from '@/lib/analytics';
 
 interface StackKitDetailDialogProps {
   kit: StackKit | null;
@@ -39,54 +41,97 @@ export function StackKitDetailDialog({ kit, open, onOpenChange }: StackKitDetail
   const categoryInfo = CATEGORY_INFO[kit.category];
 
   const handleCloneKit = async () => {
-    if (!user) {
-      toast.error('Please sign in to clone this kit');
-      return;
-    }
-
     setCloning(true);
     try {
-      // Create a new stack based on the kit
-      const stackName = `My ${kit.name}`;
-      const slug = `${kit.id}-${Date.now().toString(36)}`;
-
-      const { data: stackData, error: stackError } = await supabase
-        .from('stacks')
-        .insert({
-          name: stackName,
-          slug,
-          profile_id: user.id,
-          is_public: true,
+      // Get affiliate links for tools in the kit
+      const toolsWithAffiliates = kit.tools
+        .map(tool => {
+          const affiliateLink = getAffiliateLink(tool.name);
+          return {
+            ...tool,
+            affiliate_url: affiliateLink?.url || null,
+            commission: affiliateLink?.commission || 0,
+          };
         })
-        .select()
-        .single();
+        .filter(tool => tool.affiliate_url); // Only tools with affiliate links
 
-      if (stackError) throw stackError;
+      // Track kit clone
+      await trackStackKitClone(kit.id, kit.name, user?.id);
 
-      // Find matching tools in database and add them
-      const toolSlugs = kit.tools.map(t => t.slug);
-      const { data: tools } = await supabase
-        .from('tools')
-        .select('id, slug')
-        .in('slug', toolSlugs);
-
-      if (tools && tools.length > 0) {
-        const stackItems = tools.map((tool, index) => ({
-          stack_id: stackData.id,
-          tool_id: tool.id,
-          sort_order: index,
-        }));
-
-        await supabase.from('stack_items').insert(stackItems);
+      if (toolsWithAffiliates.length === 0) {
+        toast.info('No affiliate links available for this kit');
+        setCloning(false);
+        return;
       }
 
-      toast.success('Stack kit cloned! Redirecting...');
-      onOpenChange(false);
-      navigate(`/stack/${slug}`);
+      // Open affiliate links with delay to avoid popup blockers
+      toolsWithAffiliates.forEach((tool, index) => {
+        setTimeout(() => {
+          if (tool.affiliate_url) {
+            window.open(tool.affiliate_url, '_blank', 'noopener,noreferrer');
+          }
+        }, index * 300); // 300ms delay between each link
+      });
+
+      // If user is authenticated, also create a stack in database
+      if (user) {
+        try {
+          const stackName = `My ${kit.name}`;
+          const slug = `${kit.id}-${Date.now().toString(36)}`;
+
+          const { data: stackData, error: stackError } = await supabase
+            .from('stacks')
+            .insert({
+              name: stackName,
+              slug,
+              profile_id: user.id,
+              is_public: true,
+            })
+            .select()
+            .single();
+
+          if (!stackError && stackData) {
+            // Find matching tools in database and add them
+            const toolSlugs = kit.tools.map(t => t.slug);
+            const { data: tools } = await supabase
+              .from('tools')
+              .select('id, slug')
+              .in('slug', toolSlugs);
+
+            if (tools && tools.length > 0) {
+              const stackItems = tools.map((tool, index) => ({
+                stack_id: stackData.id,
+                tool_id: tool.id,
+                sort_order: index,
+              }));
+
+              await supabase.from('stack_items').insert(stackItems);
+            }
+
+            // Show success and navigate
+            setTimeout(() => {
+              toast.success('Stack kit cloned! Opening affiliate links...');
+              onOpenChange(false);
+              navigate(`/stack/${slug}`);
+            }, toolsWithAffiliates.length * 300 + 500);
+            return;
+          }
+        } catch (dbError) {
+          console.error('Error creating stack in DB:', dbError);
+          // Continue to show affiliate links even if DB creation fails
+        }
+      }
+
+      // Show success toast
+      setTimeout(() => {
+        toast.success(`Opening ${toolsWithAffiliates.length} tools in new tabs...`, {
+          description: 'Sign up for each tool to complete your stack setup.',
+        });
+        setCloning(false);
+      }, toolsWithAffiliates.length * 300 + 500);
     } catch (error) {
       console.error('Error cloning kit:', error);
       toast.error('Failed to clone kit. Please try again.');
-    } finally {
       setCloning(false);
     }
   };
@@ -232,6 +277,18 @@ export function StackKitDetailDialog({ kit, open, onOpenChange }: StackKitDetail
 
           <Separator />
 
+          {/* Commission Info */}
+          {kit.totalCommission && kit.totalCommission > 0 && (
+            <Card className="p-3 bg-green-500/10 border-green-500/30">
+              <div className="flex items-center gap-2 text-sm">
+                <Sparkles className="w-4 h-4 text-green-400" />
+                <span className="text-green-400 font-medium">
+                  Potential commission: ${kit.totalCommission} if all tools are signed up
+                </span>
+              </div>
+            </Card>
+          )}
+
           {/* Actions */}
           <div className="flex items-center gap-3">
             <Button 
@@ -241,11 +298,14 @@ export function StackKitDetailDialog({ kit, open, onOpenChange }: StackKitDetail
               size="lg"
             >
               {cloning ? (
-                <LoadingFire size="sm" />
+                <>
+                  <LoadingFire size="sm" />
+                  <span className="ml-2">Opening links...</span>
+                </>
               ) : (
                 <>
                   <Copy className="w-5 h-5 mr-2" />
-                  Clone This Kit
+                  Clone This Stack
                 </>
               )}
             </Button>
@@ -258,10 +318,13 @@ export function StackKitDetailDialog({ kit, open, onOpenChange }: StackKitDetail
             </Button>
           </div>
 
-          {!user && (
-            <p className="text-sm text-muted-foreground text-center">
-              Sign in to clone this kit and start building
-            </p>
+          {kit.testimonial && (
+            <Card className="p-4 bg-muted/30 border-border">
+              <p className="text-sm italic text-muted-foreground mb-1">
+                "{kit.testimonial.text}"
+              </p>
+              <p className="text-xs text-muted-foreground">— {kit.testimonial.author}</p>
+            </Card>
           )}
         </div>
       </DialogContent>

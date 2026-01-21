@@ -11,6 +11,12 @@ import { RepoRoastDialog } from "@/components/RepoRoastDialog";
 import { VisualRoastDialog } from "@/components/VisualRoastDialog";
 import { RoastFriendDialog } from "@/components/RoastFriendDialog";
 import { GlobalSearch } from "@/components/GlobalSearch";
+import { FeaturedStacks } from "@/components/FeaturedStacks";
+import { StackKitCard } from "@/components/StackKitCard";
+import { getFeaturedKits, enhanceKitsWithCommissions } from "@/data/stackKits";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Sparkles, ArrowRight } from "lucide-react";
 
 export default function Index() {
   const [submitDialogOpen, setSubmitDialogOpen] = useState(false);
@@ -28,6 +34,50 @@ export default function Index() {
       <section className="container mx-auto px-4 pt-32 pb-16">
         <div className="max-w-4xl mx-auto text-center space-y-8">
           <Hero />
+        </div>
+      </section>
+
+      {/* Featured Stacks Section */}
+      <section className="container mx-auto px-4 py-8">
+        <div className="max-w-7xl mx-auto">
+          <FeaturedStacks limit={3} showCarousel={true} />
+        </div>
+      </section>
+
+      {/* Stack Kits Section */}
+      <section className="container mx-auto px-4 py-12">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-3xl font-bold flex items-center gap-3 mb-2">
+                <Sparkles className="w-8 h-8 text-violet-500" />
+                Browse Stack Kits
+              </h2>
+              <p className="text-muted-foreground">
+                Curated tech stack templates for every use case. Clone and customize.
+              </p>
+            </div>
+            <Link to="/kits">
+              <Button variant="outline" className="gap-2">
+                View All Kits
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            </Link>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {enhanceKitsWithCommissions(getFeaturedKits()).slice(0, 3).map((kit) => (
+              <StackKitCard
+                key={kit.id}
+                kit={kit}
+                onClick={() => {
+                  // Navigate to kits page with kit selected
+                  window.location.href = `/kits?kit=${kit.id}`;
+                }}
+                featured
+              />
+            ))}
+          </div>
         </div>
       </section>
 

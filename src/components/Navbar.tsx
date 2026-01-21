@@ -19,7 +19,8 @@ import {
   Sun,
   Moon,
   Search,
-  Sparkles
+  Sparkles,
+  BookmarkCheck
 } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
@@ -213,14 +214,24 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
                   </Link>
 
                   {user && (
-                    <Link
-                      to="/dashboard"
-                      onClick={closeMenu}
-                      className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted transition-colors"
-                    >
-                      <Settings className="w-5 h-5 text-muted-foreground" />
-                      <span>Dashboard</span>
-                    </Link>
+                    <>
+                      <Link
+                        to="/saved"
+                        onClick={closeMenu}
+                        className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted transition-colors"
+                      >
+                        <BookmarkCheck className="w-5 h-5 text-violet-500" />
+                        <span>Saved Stacks</span>
+                      </Link>
+                      <Link
+                        to="/dashboard"
+                        onClick={closeMenu}
+                        className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted transition-colors"
+                      >
+                        <Settings className="w-5 h-5 text-muted-foreground" />
+                        <span>Dashboard</span>
+                      </Link>
+                    </>
                   )}
 
                   <div className="my-4 border-t border-border" />

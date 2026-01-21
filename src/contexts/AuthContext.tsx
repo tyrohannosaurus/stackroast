@@ -114,6 +114,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) throw error;
       setProfile(data);
 
+      // Migrate localStorage saves to database
+      try {
+        const { migrateLocalStorageSaves } = await import('@/components/SaveStackButton');
+        await migrateLocalStorageSaves(userId);
+      } catch (err) {
+        console.log('LocalStorage migration skipped:', err);
+      }
+
       // Send welcome email to new users
       if (user.email) {
         sendWelcomeEmail(user.email, username, userId).catch(err => {

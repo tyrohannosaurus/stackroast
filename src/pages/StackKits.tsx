@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -20,6 +20,7 @@ import {
   CATEGORY_INFO, 
   DIFFICULTY_INFO,
   getFeaturedKits,
+  enhanceKitsWithCommissions,
   type StackKit 
 } from '@/data/stackKits';
 import { StackKitCard } from '@/components/StackKitCard';
@@ -34,9 +35,22 @@ export default function StackKits() {
   const [selectedKit, setSelectedKit] = useState<StackKit | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
 
-  const featuredKits = getFeaturedKits();
+  // Check for kit ID in URL params
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const kitId = params.get('kit');
+    if (kitId) {
+      const kit = STACK_KITS.find(k => k.id === kitId);
+      if (kit) {
+        setSelectedKit(kit);
+      }
+    }
+  }, []);
 
-  const filteredKits = STACK_KITS.filter(kit => {
+  const featuredKits = enhanceKitsWithCommissions(getFeaturedKits());
+  const enhancedKits = enhanceKitsWithCommissions();
+
+  const filteredKits = enhancedKits.filter(kit => {
     // Search filter
     const searchLower = search.toLowerCase();
     const matchesSearch = 
@@ -53,32 +67,26 @@ export default function StackKits() {
   const categories = Object.entries(CATEGORY_INFO).map(([key, info]) => ({
     id: key as StackKit['category'],
     ...info,
-    count: STACK_KITS.filter(k => k.category === key).length,
+    count: enhancedKits.filter(k => k.category === key).length,
   }));
 
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="border-b border-border bg-surface/50">
-        <div className="container mx-auto px-4 py-6">
-          <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-4">
+        <div className="container mx-auto px-4 pt-8 pb-4">
+          <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6">
             <ArrowLeft className="w-4 h-4" />
             Back to Home
           </Link>
           
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-4xl font-bold flex items-center gap-3">
-                <Sparkles className="w-10 h-10 text-orange-500" />
-                Stack Kits
-              </h1>
-              <p className="text-muted-foreground mt-2 max-w-2xl">
-                Curated tech stack templates for every use case. Browse, preview, and clone 
-                complete setups to kickstart your next project.
-              </p>
-            </div>
-            <Badge variant="secondary" className="text-lg px-4 py-2">
-              {STACK_KITS.length} Kits
+          <div className="flex items-center justify-between gap-4">
+            <p className="text-muted-foreground max-w-2xl">
+              Curated tech stack templates for every use case. Browse, preview, and clone 
+              complete setups to kickstart your next project.
+            </p>
+            <Badge variant="secondary" className="text-lg px-4 py-2 flex-shrink-0">
+              {enhancedKits.length} Kits
             </Badge>
           </div>
         </div>
@@ -197,18 +205,18 @@ export default function StackKits() {
         {/* Stats */}
         <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card className="p-4 text-center bg-surface/50">
-            <div className="text-3xl font-bold text-orange-500">{STACK_KITS.length}</div>
+            <div className="text-3xl font-bold text-orange-500">{enhancedKits.length}</div>
             <div className="text-sm text-muted-foreground">Total Kits</div>
           </Card>
           <Card className="p-4 text-center bg-surface/50">
             <div className="text-3xl font-bold text-green-500">
-              {STACK_KITS.reduce((sum, k) => sum + k.tools.length, 0)}
+              {enhancedKits.reduce((sum, k) => sum + k.tools.length, 0)}
             </div>
             <div className="text-sm text-muted-foreground">Tools Covered</div>
           </Card>
           <Card className="p-4 text-center bg-surface/50">
             <div className="text-3xl font-bold text-blue-500">
-              {STACK_KITS.filter(k => k.totalMonthlyCost === 0).length}
+              {enhancedKits.filter(k => k.totalMonthlyCost === 0).length}
             </div>
             <div className="text-sm text-muted-foreground">Free Stacks</div>
           </Card>
