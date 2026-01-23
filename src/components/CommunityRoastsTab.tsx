@@ -9,35 +9,7 @@ import { toast } from "sonner";
 import { LoadingFire } from "@/components/LoadingFire";
 import { Flame, ArrowUp, ArrowDown, Award, TrendingUp, MessageCircle, Send, ChevronDown, ChevronUp } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-
-interface RoastComment {
-  id: string;
-  roast_id: string;
-  user_id: string;
-  comment_text: string;
-  created_at: string;
-  profiles: {
-    username: string;
-    avatar_url?: string;
-  };
-}
-
-interface CommunityRoast {
-  id: string;
-  user_id: string;
-  roast_text: string;
-  upvotes: number;
-  downvotes: number;
-  created_at: string;
-  profiles: {
-    username: string;
-    karma_points: number;
-    avatar_url?: string;
-  };
-  user_vote?: "up" | "down" | null;
-  comments?: RoastComment[];
-  comment_count?: number;
-}
+import type { RoastCommentWithProfile, CommunityRoastWithProfile, CommunityRoastWithStats, SupabaseError } from "@/types/database";
 
 interface CommunityRoastsTabProps {
   stackId: string;
@@ -45,7 +17,7 @@ interface CommunityRoastsTabProps {
 
 export function CommunityRoastsTab({ stackId }: CommunityRoastsTabProps) {
   const { user, refreshProfile } = useAuth();
-  const [roasts, setRoasts] = useState<CommunityRoast[]>([]);
+  const [roasts, setRoasts] = useState<CommunityRoastWithProfile[]>([]);
   const [newRoast, setNewRoast] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingRoasts, setLoadingRoasts] = useState(true);
@@ -61,61 +33,69 @@ export function CommunityRoastsTab({ stackId }: CommunityRoastsTabProps) {
 
   const loadRoasts = async () => {
     setLoadingRoasts(true);
-    const query = supabase
-      .from("community_roasts")
-      .select(`
-        *,
-        profiles:user_id (username, karma_points, avatar_url)
-      `)
-      .eq("stack_id", stackId);
 
-    if (sortBy === 'top') {
-      query.order("upvotes", { ascending: false });
-    } else {
-      query.order("created_at", { ascending: false });
-    }
+    try {
+      // Use the optimized view with pre-aggregated comment counts
+      // This eliminates the N+1 query pattern
+      const query = supabase
+        .from("community_roasts_with_stats")
+        .select("*")
+        .eq("stack_id", stackId);
 
-    const { data, error } = await query;
+      if (sortBy === 'top') {
+        query.order("upvotes", { ascending: false });
+      } else {
+        query.order("created_at", { ascending: false });
+      }
 
-    if (error) {
+      const { data, error } = await query;
+
+      if (error) {
+        const supaError = error as SupabaseError;
+        console.error("Error loading roasts:", supaError);
+        toast.error(`Failed to load roasts: ${supaError.message}`);
+        setLoadingRoasts(false);
+        return;
+      }
+
+      // Ensure upvotes and downvotes are always numbers and map to expected format
+      const normalizedData: CommunityRoastWithProfile[] = (data || []).map((roast: CommunityRoastWithStats) => ({
+        id: roast.id,
+        user_id: roast.user_id,
+        roast_text: roast.roast_content,
+        upvotes: roast.upvotes ?? 0,
+        downvotes: roast.downvotes ?? 0,
+        created_at: roast.created_at,
+        comment_count: roast.comment_count ?? 0,
+        profiles: {
+          username: roast.author_username || "Anonymous",
+          karma_points: 0, // Can be added to view if needed
+          avatar_url: roast.author_avatar_url
+        }
+      }));
+
+      // Load user votes in a single query if user is authenticated
+      if (user && normalizedData.length > 0) {
+        const { data: votes } = await supabase
+          .from("roast_votes")
+          .select("roast_id, vote_type")
+          .eq("user_id", user.id)
+          .in("roast_id", normalizedData.map((r) => r.id));
+
+        const voteMap = new Map(votes?.map((v) => [v.roast_id, v.vote_type]));
+        normalizedData.forEach((roast) => {
+          roast.user_vote = voteMap.get(roast.id) as "up" | "down" | null;
+        });
+      }
+
+      setRoasts(normalizedData);
+    } catch (err) {
+      const error = err as Error;
       console.error("Error loading roasts:", error);
+      toast.error(`An error occurred while loading roasts: ${error.message}`);
+    } finally {
       setLoadingRoasts(false);
-      return;
     }
-
-    // Ensure upvotes and downvotes are always numbers
-    const normalizedData = (data || []).map((roast: any) => ({
-      ...roast,
-      upvotes: roast.upvotes ?? 0,
-      downvotes: roast.downvotes ?? 0,
-    }));
-
-    if (user && normalizedData.length > 0) {
-      const { data: votes } = await supabase
-        .from("roast_votes")
-        .select("roast_id, vote_type")
-        .eq("user_id", user.id)
-        .in("roast_id", normalizedData.map((r) => r.id));
-
-      const voteMap = new Map(votes?.map((v) => [v.roast_id, v.vote_type]));
-      normalizedData.forEach((roast) => {
-        roast.user_vote = voteMap.get(roast.id) as "up" | "down" | null;
-      });
-    }
-
-    // Get comment counts for each roast
-    const roastsWithCounts = await Promise.all(
-      normalizedData.map(async (roast) => {
-        const { count } = await supabase
-          .from("roast_comments")
-          .select("*", { count: "exact", head: true })
-          .eq("roast_id", roast.id);
-        return { ...roast, comment_count: count || 0 };
-      })
-    );
-
-    setRoasts(roastsWithCounts as any);
-    setLoadingRoasts(false);
   };
 
   const loadComments = async (roastId: string) => {

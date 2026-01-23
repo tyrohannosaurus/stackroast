@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { sendWelcomeEmail } from "@/lib/emailService";
 import type { User } from "@supabase/supabase-js";
@@ -120,22 +120,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Track in-flight profile loading requests to prevent race conditions
+  const loadingProfileRef = useRef<string | null>(null);
+
   const loadProfile = async (userId: string) => {
+    // Prevent concurrent loads for the same user
+    if (loadingProfileRef.current === userId) {
+      console.log("Profile load already in progress for user:", userId);
+      return;
+    }
+
+    loadingProfileRef.current = userId;
+
     try {
       setLoading(true);
       console.log("Loading profile for user:", userId);
-      
+
       // Add timeout to catch hanging queries (3 seconds - reduced for faster UX)
-      const timeoutPromise = new Promise((_, reject) => 
+      const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Profile query timeout')), 3000)
       );
-      
+
       const queryPromise = supabase
         .from("profiles")
         .select("id, username, karma_points, avatar_url")
         .eq("id", userId)
         .single();
-      
+
       const result = await Promise.race([queryPromise, timeoutPromise]) as any;
       const { data, error } = result;
 
@@ -185,6 +196,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setProfile(null);
     } finally {
       setLoading(false);
+      // Clear the loading ref for this user
+      if (loadingProfileRef.current === userId) {
+        loadingProfileRef.current = null;
+      }
     }
   };
 
@@ -292,24 +307,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setProfile(null);
   };
 
-  const refreshProfile = async () => {
+  const refreshProfile = useCallback(async () => {
     if (user) {
       console.log('🔄 Refreshing profile after karma update...');
       await loadProfile(user.id);
     }
-  };
+  }, [user]);
+
+  // Memoize the context value to prevent unnecessary re-renders
+  const contextValue = useMemo(() => ({
+    user,
+    profile,
+    loading,
+    signInWithGoogle,
+    signInWithGitHub,
+    signInWithTwitter,
+    signOut,
+    refreshProfile
+  }), [user, profile, loading, refreshProfile]);
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      profile, 
-      loading, 
-      signInWithGoogle,
-      signInWithGitHub,
-      signInWithTwitter,
-      signOut,
-      refreshProfile
-    }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

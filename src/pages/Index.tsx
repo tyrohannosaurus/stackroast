@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Hero } from "@/components/Hero";
 import { RoastFeed } from "@/components/RoastFeed";
 import { Footer } from "@/components/Footer";
@@ -17,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Sparkles, ArrowRight } from "lucide-react";
 
 export default function Index() {
+  const navigate = useNavigate();
   const [submitDialogOpen, setSubmitDialogOpen] = useState(false);
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
   const [repoDialogOpen, setRepoDialogOpen] = useState(false);
@@ -68,8 +70,8 @@ export default function Index() {
                 key={kit.id}
                 kit={kit}
                 onClick={() => {
-                  // Navigate to kits page with kit selected
-                  window.location.href = `/kits?kit=${kit.id}`;
+                  // Navigate to kits page with kit selected using React Router
+                  navigate(`/kits?kit=${kit.id}`);
                 }}
                 featured
               />

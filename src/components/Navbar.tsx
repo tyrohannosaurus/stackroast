@@ -352,8 +352,8 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
         </>
       )}
 
-      <AuthDialog 
-        open={authOpen} 
+      <AuthDialog
+        open={authOpen}
         onOpenChange={setAuthOpen}
         defaultMode={authMode}
       />

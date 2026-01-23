@@ -13,6 +13,7 @@ import { generateRoast } from '@/lib/generateRoast';
 import { PersonaSelector } from "@/components/PersonaSelector";
 import { getRandomPersona, type PersonaKey } from "@/lib/roastPersonas";
 import confetti from "canvas-confetti";
+import { CreateStackSchema, generateSlug, isXssSafe, formatZodError } from "@/lib/validation";
 
 interface Tool {
   id: string;
@@ -105,34 +106,35 @@ export function SubmitStackDialog({ open, onOpenChange }: SubmitStackDialogProps
         selectedPersona
       });
 
-      // Validation
-      if (!stackName.trim()) {
-        console.warn('⚠️ Validation failed: No stack name');
+      // Comprehensive validation using Zod schema
+      const validationResult = CreateStackSchema.safeParse({
+        name: stackName,
+        description: "", // Optional description, can be added to UI later
+        selectedTools: selectedTools.map(t => ({
+          id: t.id,
+          name: t.name,
+          category: t.category
+        })),
+        isPublic: true,
+      });
+
+      if (!validationResult.success) {
+        const errorMessage = formatZodError(validationResult.error);
+        console.warn('⚠️ Validation failed:', errorMessage);
         toast({
-          title: "Missing stack name",
-          description: "Please enter a name for your stack.",
+          title: "Validation Error",
+          description: errorMessage,
           variant: "destructive",
         });
         return;
       }
 
-      if (selectedTools.length === 0) {
-        console.warn('⚠️ Validation failed: No tools selected');
+      // Additional XSS safety check
+      if (!isXssSafe(stackName)) {
+        console.warn('⚠️ XSS attempt detected in stack name');
         toast({
-          title: "No tools selected",
-          description: "Please select at least one tool.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Validate tools have IDs
-      const toolsWithoutIds = selectedTools.filter(t => !t.id);
-      if (toolsWithoutIds.length > 0) {
-        console.error('❌ Some tools are missing IDs:', toolsWithoutIds);
-        toast({
-          title: "Invalid tools",
-          description: "Some selected tools are invalid. Please refresh and try again.",
+          title: "Invalid Input",
+          description: "Stack name contains invalid characters or tags.",
           variant: "destructive",
         });
         return;
@@ -277,11 +279,9 @@ export function SubmitStackDialog({ open, onOpenChange }: SubmitStackDialogProps
       console.log('🔍 Ensuring profile exists...');
       const profileId = await ensureProfileExists(user.id);
       console.log('✅ Profile ID confirmed:', profileId);
-      
-      const slug = name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)/g, "");
+
+      // Use validated slug generation
+      const slug = generateSlug(name);
 
       console.log('📝 Generated slug:', slug);
 

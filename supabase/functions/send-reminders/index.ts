@@ -10,10 +10,25 @@ const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const FROM_EMAIL = Deno.env.get("FROM_EMAIL") || "StackRoast <noreply@stackroast.dev>";
 const SITE_URL = Deno.env.get("SITE_URL") || "https://stackroast.dev";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+// Allowed origins for CORS (production and development)
+const ALLOWED_ORIGINS = [
+  "https://stackroast.dev",
+  "https://www.stackroast.dev",
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "http://127.0.0.1:5173",
+];
+
+function getCorsHeaders(origin: string | null): Record<string, string> {
+  const allowedOrigin = origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Max-Age": "86400", // 24 hours
+  };
+}
 
 interface SavedStackReminder {
   id: string;
@@ -33,6 +48,9 @@ interface SavedStackReminder {
 }
 
 serve(async (req) => {
+  const origin = req.headers.get("origin");
+  const corsHeaders = getCorsHeaders(origin);
+
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -205,22 +223,31 @@ View your stack: ${SITE_URL}/stack/${stack.slug}
 Manage saved stacks: ${SITE_URL}/saved
         `;
 
-        // Send email via Resend
-        const emailResponse = await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${RESEND_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            from: FROM_EMAIL,
-            to: [email],
-            subject,
-            html,
-            text,
-            tags: [{ name: "type", value: "saved_stack_reminder" }],
-          }),
-        });
+        // Send email via Resend with timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+        let emailResponse;
+        try {
+          emailResponse = await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${RESEND_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              from: FROM_EMAIL,
+              to: [email],
+              subject,
+              html,
+              text,
+              tags: [{ name: "type", value: "saved_stack_reminder" }],
+            }),
+            signal: controller.signal,
+          });
+        } finally {
+          clearTimeout(timeoutId);
+        }
 
         const emailResult = await emailResponse.json();
 

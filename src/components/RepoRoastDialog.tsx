@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +31,7 @@ interface RepoRoastDialogProps {
 type Step = 'auth-check' | 'input' | 'parsing' | 'review' | 'submitting' | 'success';
 
 export function RepoRoastDialog({ open, onOpenChange }: RepoRoastDialogProps) {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [step, setStep] = useState<Step>('auth-check');
   const [repoUrl, setRepoUrl] = useState('');
@@ -211,10 +213,10 @@ export function RepoRoastDialog({ open, onOpenChange }: RepoRoastDialogProps) {
 
       toast.success('Stack submitted from GitHub! 🎉');
 
-      // Navigate after a delay
+      // Navigate after a delay using React Router
       setTimeout(() => {
         handleClose();
-        window.location.href = `/stack/${slug}`;
+        navigate(`/stack/${slug}`);
       }, 2000);
     } catch (error: any) {
       console.error('Error submitting stack:', error);
