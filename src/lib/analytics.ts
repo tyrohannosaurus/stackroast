@@ -1,5 +1,6 @@
 // Analytics tracking for monetization features
 import { supabase } from './supabase';
+import { getAffiliateLink } from '@/data/affiliateLinks';
 
 /**
  * Track a click on an alternative tool suggestion
@@ -30,6 +31,44 @@ export async function trackAlternativeClick(
   } catch (error) {
     console.error('Error tracking alternative click:', error);
     // Silently fail - analytics shouldn't block user experience
+  }
+}
+
+/**
+ * Track a direct affiliate click (stack page, clone stack, kits, fix-my-stack)
+ */
+export async function trackAffiliateClick(options: {
+  toolId?: string | null;
+  toolName?: string | null;
+  affiliateUrl?: string | null;
+  stackId?: string | null;
+  userId?: string | null;
+  source?: string | null;
+}): Promise<void> {
+  try {
+    const affiliateInfo = options.toolName ? getAffiliateLink(options.toolName) : null;
+    const commission = affiliateInfo?.commission ?? 0;
+
+    const { error } = await supabase
+      .from('affiliate_clicks')
+      .insert({
+        tool_id: options.toolId || null,
+        tool_name: options.toolName || null,
+        affiliate_url: options.affiliateUrl || null,
+        stack_id: options.stackId || null,
+        user_id: options.userId || null,
+        source: options.source || 'stack_page',
+        commission,
+        referrer: typeof window !== 'undefined' ? window.location.href : null,
+        user_agent: typeof window !== 'undefined' ? navigator.userAgent : null,
+      });
+
+    if (error) {
+      // Don't throw - analytics should never block user flow
+      console.error('Error tracking affiliate click:', error);
+    }
+  } catch (error) {
+    console.error('Error tracking affiliate click:', error);
   }
 }
 

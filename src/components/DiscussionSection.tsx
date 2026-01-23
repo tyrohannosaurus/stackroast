@@ -28,7 +28,7 @@ interface DiscussionSectionProps {
 }
 
 export function DiscussionSection({ stackId }: DiscussionSectionProps) {
-  const { user, profile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const [discussions, setDiscussions] = useState<Discussion[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
@@ -114,11 +114,12 @@ export function DiscussionSection({ stackId }: DiscussionSectionProps) {
 
       // Award karma for posting (+1)
       await supabase.rpc("award_karma", {
-        p_user_id: user.id,
-        p_points: 1,
-        p_action_type: "discussion_post",
-        p_reference_id: stackId,
+        user_uuid: user.id,
+        points: 1,
       });
+
+      // Refresh profile to update karma display
+      await refreshProfile();
 
       toast.success("Message posted! +1 log");
       setNewMessage("");

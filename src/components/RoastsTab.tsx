@@ -33,7 +33,7 @@ interface RoastsTabProps {
 }
 
 export function RoastsTab({ stackId }: RoastsTabProps) {
-  const { user } = useAuth();
+  const { user, refreshProfile } = useAuth();
   const [roasts, setRoasts] = useState<CommunityRoast[]>([]);
   const [aiRoast, setAiRoast] = useState<AIRoast | null>(null);
   const [newRoast, setNewRoast] = useState("");
@@ -199,11 +199,12 @@ export function RoastsTab({ stackId }: RoastsTabProps) {
 
       // Award karma (+2 for roasting)
       await supabase.rpc("award_karma", {
-        p_user_id: user.id,
-        p_points: 2,
-        p_action_type: "roast_submit",
-        p_reference_id: stackId,
+        user_uuid: user.id,
+        points: 2,
       });
+
+      // Refresh profile to update karma display
+      await refreshProfile();
 
       toast.success("Roast submitted! +2 logs 🔥");
       setNewRoast("");
@@ -355,7 +356,7 @@ export function RoastsTab({ stackId }: RoastsTabProps) {
                     <ArrowUp className="w-4 h-4" />
                   </Button>
                   <span className="font-semibold min-w-8 text-center">
-                    {roast.upvotes - roast.downvotes}
+                    {(roast.upvotes ?? 0) - (roast.downvotes ?? 0)}
                   </span>
                   <Button
                     variant="ghost"

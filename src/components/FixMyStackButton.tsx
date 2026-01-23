@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Lightbulb, ExternalLink } from 'lucide-react';
+import { Lightbulb, ExternalLink, Sparkles } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { trackAffiliateClick } from '@/lib/analytics';
+import { generateStackImprovements } from '@/lib/generateRoast';
+import { useToast } from '@/hooks/use-toast';
 import type { Stack } from '@/types';
 
 interface FixMyStackButtonProps {
@@ -12,7 +15,9 @@ interface FixMyStackButtonProps {
 interface Suggestion {
   issue: string;
   suggestion: string;
-  tool: {
+  severity: 'high' | 'medium' | 'low';
+  category: string;
+  tool?: {
     id: string;
     name: string;
     description: string;
@@ -26,12 +31,72 @@ export function FixMyStackButton({ stack }: FixMyStackButtonProps) {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [loading, setLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const { toast } = useToast();
 
   const generateSuggestions = async () => {
     setLoading(true);
     try {
-      const weaknesses = analyzeStack(stack);
+      console.log('🤖 Starting AI-powered stack analysis...');
       
+      // Use AI to analyze the stack and identify improvements
+      const improvements = await generateStackImprovements(
+        stack.name,
+        stack.tools.map(t => ({
+          name: t.name,
+          category: t.category || '',
+          base_price: t.base_price || 0,
+        }))
+      );
+
+      console.log('✅ AI analysis complete:', improvements);
+
+      // Enrich suggestions with tool data from database
+      const enrichedSuggestions = await Promise.all(
+        improvements.suggestions.map(async (suggestion) => {
+          // Try to find a matching tool in the database
+          const { data: tool } = await supabase
+            .from('tools')
+            .select('id, name, description, logo_url, affiliate_url, base_price')
+            .ilike('name', `%${suggestion.tool_name}%`)
+            .limit(1)
+            .maybeSingle();
+
+          return {
+            issue: suggestion.issue,
+            suggestion: suggestion.recommendation,
+            severity: suggestion.severity as 'high' | 'medium' | 'low',
+            category: suggestion.category,
+            tool: tool ? {
+              id: tool.id,
+              name: tool.name,
+              description: tool.description || '',
+              logo_url: tool.logo_url || '',
+              affiliate_url: tool.affiliate_url || '',
+              base_price: tool.base_price || 0,
+            } : undefined,
+          };
+        })
+      );
+
+      setSuggestions(enrichedSuggestions);
+      setShowSuggestions(true);
+      
+      if (enrichedSuggestions.length === 0) {
+        toast({
+          title: "Stack Analysis Complete",
+          description: "Your stack looks solid! No major improvements needed.",
+        });
+      }
+    } catch (error: any) {
+      console.error('❌ Error generating AI suggestions:', error);
+      toast({
+        title: "Analysis Error",
+        description: error.message || "Failed to analyze stack. Falling back to basic analysis.",
+        variant: "destructive",
+      });
+      
+      // Fallback to basic analysis if AI fails
+      const weaknesses = analyzeStack(stack);
       const toolSuggestions = await Promise.all(
         weaknesses.map(async (weakness) => {
           const { data: tool } = await supabase
@@ -47,7 +112,16 @@ export function FixMyStackButton({ stack }: FixMyStackButtonProps) {
           return {
             issue: weakness.issue,
             suggestion: weakness.suggestion,
-            tool,
+            severity: 'medium' as const,
+            category: weakness.category,
+            tool: {
+              id: tool.id,
+              name: tool.name,
+              description: tool.description || '',
+              logo_url: tool.logo_url || '',
+              affiliate_url: tool.affiliate_url || '',
+              base_price: tool.base_price || 0,
+            },
           };
         })
       );
@@ -55,25 +129,21 @@ export function FixMyStackButton({ stack }: FixMyStackButtonProps) {
       const validSuggestions = toolSuggestions.filter((s): s is Suggestion => s !== null);
       setSuggestions(validSuggestions);
       setShowSuggestions(true);
-    } catch (error) {
-      console.error('Error generating suggestions:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const trackClick = async (toolId: string, url: string) => {
-    try {
-      await supabase.from('affiliate_clicks').insert({
-        tool_id: toolId,
-        stack_id: stack.id,
-        user_id: stack.user_id,
-        referrer: window.location.href,
-      });
-    } catch (error) {
-      console.error('Error tracking click:', error);
-    }
-    window.open(url, '_blank');
+  const trackClick = async (tool: { id: string; name: string; affiliate_url: string }) => {
+    await trackAffiliateClick({
+      toolId: tool.id,
+      toolName: tool.name,
+      affiliateUrl: tool.affiliate_url,
+      stackId: stack.id,
+      source: "fix_my_stack",
+      userId: (stack as any).user_id || (stack as any).profile_id || null,
+    });
+    window.open(tool.affiliate_url, "_blank");
   };
 
   if (!showSuggestions) {
@@ -83,8 +153,17 @@ export function FixMyStackButton({ stack }: FixMyStackButtonProps) {
         disabled={loading}
         className="w-full gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white border-0 shadow-lg hover:shadow-orange-500/50 transition-all font-semibold"
       >
-        <Lightbulb className="w-4 h-4" />
-        {loading ? 'Analyzing Stack...' : 'Fix My Stack'}
+        {loading ? (
+          <>
+            <Sparkles className="w-4 h-4 animate-pulse" />
+            AI Analyzing Stack...
+          </>
+        ) : (
+          <>
+            <Lightbulb className="w-4 h-4" />
+            Fix My Stack (AI-Powered)
+          </>
+        )}
       </Button>
     );
   }
@@ -92,11 +171,11 @@ export function FixMyStackButton({ stack }: FixMyStackButtonProps) {
   return (
     <Card className="p-6 bg-gradient-to-br from-orange-500/10 to-amber-500/10 border-orange-500/30">
       <div className="flex items-start gap-3 mb-4">
-        <Lightbulb className="w-5 h-5 text-orange-500 mt-1" />
+        <Sparkles className="w-5 h-5 text-orange-500 mt-1" />
         <div>
-          <h3 className="font-semibold text-lg text-foreground">Stack Improvements</h3>
+          <h3 className="font-semibold text-lg text-foreground">AI-Powered Stack Improvements</h3>
           <p className="text-sm text-muted-foreground">
-            Upgrade opportunities based on your current stack
+            Intelligent recommendations to optimize your stack
           </p>
         </div>
       </div>
@@ -113,37 +192,71 @@ export function FixMyStackButton({ stack }: FixMyStackButtonProps) {
               className="p-4 rounded-lg bg-card border border-orange-500/20 hover:border-orange-500/40 transition-colors"
             >
               <div className="flex items-start gap-3">
-                <img
-                  src={suggestion.tool.logo_url}
-                  alt={suggestion.tool.name}
-                  className="w-10 h-10 rounded"
-                  onError={(e) => {
-                    e.currentTarget.src = 'https://via.placeholder.com/40';
-                  }}
-                />
-                <div className="flex-1">
-                  <p className="text-sm text-orange-500 mb-1 font-medium">
-                    ⚠️ {suggestion.issue}
-                  </p>
-                  <h4 className="font-medium mb-1 text-foreground">{suggestion.tool.name}</h4>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    {suggestion.suggestion}
-                  </p>
-                  <div className="flex items-center gap-4">
-                    {suggestion.tool.base_price > 0 && (
-                      <span className="text-sm text-orange-500 font-medium">
-                        Starting at ${suggestion.tool.base_price}/mo
-                      </span>
-                    )}
-                    <Button
-                      variant="link"
-                      size="sm"
-                      className="text-orange-500 hover:text-orange-600 p-0 h-auto"
-                      onClick={() => trackClick(suggestion.tool.id, suggestion.tool.affiliate_url)}
-                    >
-                      Learn More <ExternalLink className="w-3 h-3 ml-1" />
-                    </Button>
+                {suggestion.tool?.logo_url && (
+                  <img
+                    src={suggestion.tool.logo_url}
+                    alt={suggestion.tool.name}
+                    className="w-10 h-10 rounded"
+                    onError={(e) => {
+                      e.currentTarget.src = 'https://via.placeholder.com/40';
+                    }}
+                  />
+                )}
+                {!suggestion.tool?.logo_url && (
+                  <div className="w-10 h-10 rounded bg-orange-500/20 flex items-center justify-center">
+                    <Lightbulb className="w-5 h-5 text-orange-500" />
                   </div>
+                )}
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-sm text-orange-500 font-medium">
+                      ⚠️ {suggestion.issue}
+                    </p>
+                    {suggestion.severity === 'high' && (
+                      <span className="text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded">High Priority</span>
+                    )}
+                    {suggestion.severity === 'medium' && (
+                      <span className="text-xs bg-orange-500/20 text-orange-400 px-2 py-0.5 rounded">Medium</span>
+                    )}
+                    {suggestion.severity === 'low' && (
+                      <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded">Low</span>
+                    )}
+                  </div>
+                  {suggestion.tool ? (
+                    <>
+                      <h4 className="font-medium mb-1 text-foreground">{suggestion.tool.name}</h4>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        {suggestion.suggestion}
+                      </p>
+                      <div className="flex items-center gap-4">
+                        {suggestion.tool.base_price > 0 && (
+                          <span className="text-sm text-orange-500 font-medium">
+                            Starting at ${suggestion.tool.base_price}/mo
+                          </span>
+                        )}
+                        {suggestion.tool.affiliate_url && (
+                          <Button
+                            variant="link"
+                            size="sm"
+                            className="text-orange-500 hover:text-orange-600 p-0 h-auto"
+                            onClick={() => trackClick(suggestion.tool!)}
+                          >
+                            Learn More <ExternalLink className="w-3 h-3 ml-1" />
+                          </Button>
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <h4 className="font-medium mb-1 text-foreground">{suggestion.category}</h4>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        {suggestion.suggestion}
+                      </p>
+                      <p className="text-xs text-muted-foreground italic">
+                        AI Recommendation: Consider adding tools in the {suggestion.category} category
+                      </p>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

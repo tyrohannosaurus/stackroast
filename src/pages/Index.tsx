@@ -3,14 +3,12 @@ import { Hero } from "@/components/Hero";
 import { RoastFeed } from "@/components/RoastFeed";
 import { Footer } from "@/components/Footer";
 import { FloatingSubmitButton } from "@/components/FloatingSubmitButton";
-import { CommandPalette } from "@/components/CommandPalette";
 import { SubmitStackDialog } from "@/components/SubmitStackDialog";
 import { AuthDialog } from "@/components/AuthDialog";
 import { Leaderboards } from "@/components/Leaderboards";
 import { RepoRoastDialog } from "@/components/RepoRoastDialog";
 import { VisualRoastDialog } from "@/components/VisualRoastDialog";
 import { RoastFriendDialog } from "@/components/RoastFriendDialog";
-import { GlobalSearch } from "@/components/GlobalSearch";
 import { FeaturedStacks } from "@/components/FeaturedStacks";
 import { StackKitCard } from "@/components/StackKitCard";
 import { getFeaturedKits, enhanceKitsWithCommissions } from "@/data/stackKits";
@@ -24,7 +22,6 @@ export default function Index() {
   const [repoDialogOpen, setRepoDialogOpen] = useState(false);
   const [visualRoastOpen, setVisualRoastOpen] = useState(false);
   const [roastFriendOpen, setRoastFriendOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-canvas">
@@ -104,20 +101,7 @@ export default function Index() {
       {/* Floating Submit Button */}
       <FloatingSubmitButton />
 
-      {/* Command Palette (Cmd+K) */}
-      <CommandPalette 
-        onSubmitStack={() => setSubmitDialogOpen(true)}
-        onImportGithub={() => setRepoDialogOpen(true)}
-        onVisualRoast={() => setVisualRoastOpen(true)}
-        onRoastFriend={() => setRoastFriendOpen(true)}
-        onSignIn={() => setAuthDialogOpen(true)}
-        onOpenSearch={() => setSearchOpen(true)}
-      />
-
-      {/* Global Search (from Command Palette) */}
-      <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
-
-      {/* Dialogs triggered by Command Palette */}
+      {/* Dialogs */}
       <SubmitStackDialog open={submitDialogOpen} onOpenChange={setSubmitDialogOpen} />
       <AuthDialog open={authDialogOpen} onOpenChange={setAuthDialogOpen} />
       <RepoRoastDialog open={repoDialogOpen} onOpenChange={setRepoDialogOpen} />

@@ -82,7 +82,7 @@ interface StackEngagementProps {
 }
 
 export function StackEngagement({ stackId, stackSlug, stackName }: StackEngagementProps) {
-  const { user } = useAuth();
+  const { user, refreshProfile } = useAuth();
   
   // AI Roast state
   const [aiRoast, setAiRoast] = useState<AIRoast | null>(null);
@@ -274,11 +274,12 @@ export function StackEngagement({ stackId, stackSlug, stackName }: StackEngageme
       });
 
       await supabase.rpc("award_karma", {
-        p_user_id: user.id,
-        p_points: 2,
-        p_action_type: "roast_submit",
-        p_reference_id: stackId,
+        user_uuid: user.id,
+        points: 2,
       });
+
+      // Refresh profile to update karma display
+      await refreshProfile();
 
       toast.success("Roast submitted! +2 logs 🔥");
       setNewRoast("");
@@ -383,11 +384,12 @@ export function StackEngagement({ stackId, stackSlug, stackName }: StackEngageme
       });
 
       await supabase.rpc("award_karma", {
-        p_user_id: user.id,
-        p_points: 1,
-        p_action_type: "discussion_post",
-        p_reference_id: stackId,
+        user_uuid: user.id,
+        points: 1,
       });
+
+      // Refresh profile to update karma display
+      await refreshProfile();
 
       toast.success("Posted! +1 log");
       setNewMessage("");
@@ -592,8 +594,8 @@ export function StackEngagement({ stackId, stackSlug, stackName }: StackEngageme
                       >
                         <ArrowUp className="w-3 h-3" />
                       </Button>
-                      <span className={roast.upvotes - roast.downvotes > 0 ? 'text-orange-400' : 'text-zinc-500'}>
-                        {roast.upvotes - roast.downvotes}
+                      <span className={(roast.upvotes ?? 0) - (roast.downvotes ?? 0) > 0 ? 'text-orange-400' : 'text-zinc-500'}>
+                        {(roast.upvotes ?? 0) - (roast.downvotes ?? 0)}
                       </span>
                       <Button
                         variant="ghost"

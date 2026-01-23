@@ -22,9 +22,18 @@ export function StackCardPreview({ stack }: StackCardPreviewProps) {
   const [isUpvoting, setIsUpvoting] = useState(false);
 
   // Truncate roast to first 150 characters
-  const previewText = stack.ai_roast_summary || 
-    stack.ai_roast_full?.substring(0, 150) + '...' || 
-    'AI roast coming soon...';
+  // Check if we have any roast text at all
+  const hasRoastText = stack.ai_roast_full && stack.ai_roast_full.trim().length > 0;
+  const hasSummary = stack.ai_roast_summary && stack.ai_roast_summary.trim().length > 0;
+  
+  let previewText = 'AI roast coming soon...';
+  if (hasSummary) {
+    previewText = stack.ai_roast_summary;
+  } else if (hasRoastText) {
+    // Extract first 150 chars and add ellipsis if longer
+    const truncated = stack.ai_roast_full.substring(0, 150);
+    previewText = stack.ai_roast_full.length > 150 ? truncated + '...' : truncated;
+  }
 
   const handleCardClick = (e: React.MouseEvent) => {
     // Don't navigate if clicking on a button or link
@@ -115,6 +124,11 @@ export function StackCardPreview({ stack }: StackCardPreviewProps) {
           <span className="flex items-center gap-1">
             🔥 {stack.roast_count}
           </span>
+          {stack.community_votes !== undefined && stack.community_votes !== 0 && (
+            <span className="flex items-center gap-1" title="Community roast votes">
+              👍 {stack.community_votes > 0 ? '+' : ''}{stack.community_votes}
+            </span>
+          )}
           <span className="flex items-center gap-1">
             ⬆ {upvoteCount}
           </span>

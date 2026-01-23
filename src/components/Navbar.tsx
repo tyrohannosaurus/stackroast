@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { AuthDialog } from "@/components/AuthDialog";
 import { SearchTrigger } from "@/components/SearchTrigger";
+import { Skeleton } from "@/components/ui/skeleton";
 import { 
   LogOut, 
   Menu, 
@@ -29,12 +30,18 @@ interface NavbarProps {
 }
 
 export function Navbar({ onSearchOpen }: NavbarProps) {
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, loading: authLoading, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [authOpen, setAuthOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<"signup" | "signin">("signup");
   const [menuOpen, setMenuOpen] = useState(false);
 
   const closeMenu = () => setMenuOpen(false);
+
+  // Debug logging
+  if (user && !profile && !authLoading) {
+    console.warn("User is logged in but profile is not loaded:", user.id);
+  }
 
   return (
     <>
@@ -47,7 +54,7 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
               <span className="text-foreground hidden sm:inline">StackRoast</span>
             </Link>
 
-            {/* Right Side - Search Bar + Theme Toggle + Karma + Hamburger */}
+            {/* Right Side - Search Bar + User Profile + Theme Toggle + Karma + Hamburger */}
             <div className="flex items-center gap-2">
               {/* Search Bar - Desktop */}
               <div className="hidden md:block w-64">
@@ -64,6 +71,29 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
                 <Search className="w-5 h-5" />
               </Button>
 
+              {/* User Profile Link (Desktop) */}
+              {authLoading && user ? (
+                // Loading skeleton when auth is loading but we know user exists
+                <div className="hidden md:flex items-center gap-2 px-3 py-1.5">
+                  <Skeleton className="w-7 h-7 rounded-full" />
+                  <Skeleton className="hidden lg:block w-20 h-4" />
+                </div>
+              ) : user && profile ? (
+                // Show profile when loaded
+                <Link
+                  to={`/user/${profile.username}`}
+                  className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-muted transition-colors"
+                >
+                  <Avatar className="w-7 h-7 ring-2 ring-orange-500/50">
+                    <AvatarImage src={profile.avatar_url} />
+                    <AvatarFallback className="bg-orange-500/20 text-orange-500 text-xs">
+                      {profile.username[0]?.toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm font-medium hidden lg:inline">{profile.username}</span>
+                </Link>
+              ) : null}
+
               {/* Theme Toggle */}
               <Button
                 variant="ghost"
@@ -78,15 +108,20 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
                 )}
               </Button>
 
-              {/* Karma Display (Desktop) */}
-              {user && profile && (
-                <div className="hidden md:flex items-center gap-2 text-sm">
+              {/* Karma Display */}
+              {authLoading && user ? (
+                // Loading skeleton for karma
+                <Skeleton className="w-20 h-8 rounded-md" />
+              ) : user && profile ? (
+                // Show karma when loaded
+                <div className="flex items-center gap-2 text-sm px-2 py-1 rounded-md bg-orange-500/10 border border-orange-500/20">
                   <Flame className="w-4 h-4 text-orange-500" />
                   <span className="text-orange-500 font-semibold">
-                    {profile.karma_points}
+                    {profile.karma_points ?? 0}
                   </span>
+                  <span className="hidden sm:inline text-xs text-muted-foreground">logs</span>
                 </div>
-              )}
+              ) : null}
 
               {/* Hamburger Menu Button */}
               <Button
@@ -132,41 +167,72 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
               {/* Menu Content */}
               <div className="flex-1 overflow-y-auto p-4">
                 {/* User Profile Section */}
-                {user && profile ? (
-                  <div className="mb-6 p-4 rounded-lg bg-muted border border-border">
+                {authLoading && user ? (
+                  // Loading skeleton in menu
+                  <div className="mb-6 p-4 rounded-lg bg-gradient-to-br from-orange-500/10 via-red-500/10 to-orange-500/5 border border-orange-500/20">
                     <div className="flex items-center gap-3 mb-3">
-                      <Avatar>
+                      <Skeleton className="w-10 h-10 rounded-full" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-6 w-20" />
+                      </div>
+                    </div>
+                    <Skeleton className="h-9 w-full rounded-md" />
+                  </div>
+                ) : user && profile ? (
+                  // Show profile when loaded
+                  <div className="mb-6 p-4 rounded-lg bg-gradient-to-br from-orange-500/10 via-red-500/10 to-orange-500/5 border border-orange-500/20">
+                    <div className="flex items-center gap-3 mb-3">
+                      <Avatar className="ring-2 ring-orange-500/50">
                         <AvatarImage src={profile.avatar_url} />
-                        <AvatarFallback>
+                        <AvatarFallback className="bg-orange-500/20 text-orange-500">
                           {profile.username[0]?.toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
-                      <div>
-                        <p className="font-medium">{profile.username}</p>
-                        <p className="text-sm text-orange-500 flex items-center gap-1">
-                          <Flame className="w-3 h-3" />
-                          {profile.karma_points} karma
-                        </p>
+                      <div className="flex-1">
+                        <p className="font-medium text-foreground">{profile.username}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-500/20 border border-orange-500/30">
+                            <Flame className="w-3.5 h-3.5 text-orange-500" />
+                            <span className="text-sm font-semibold text-orange-500">
+                              {profile.karma_points ?? 0}
+                            </span>
+                            <span className="text-xs text-orange-400/80 ml-0.5">logs</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                     <Link
                       to={`/user/${profile.username}`}
                       onClick={closeMenu}
-                      className="block w-full text-center py-2 px-4 rounded-md bg-orange-500 hover:bg-orange-600 transition-colors text-sm font-medium"
+                      className="block w-full text-center py-2 px-4 rounded-md bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 transition-colors text-sm font-medium text-white"
                     >
                       View Profile
                     </Link>
                   </div>
                 ) : (
-                  <div className="mb-6">
+                  // Show auth buttons when not logged in
+                  <div className="mb-6 space-y-2">
                     <Button
                       onClick={() => {
+                        setAuthMode("signup");
+                        setAuthOpen(true);
+                        closeMenu();
+                      }}
+                      className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
+                    >
+                      Get Started
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setAuthMode("signin");
                         setAuthOpen(true);
                         closeMenu();
                       }}
                       className="w-full"
                     >
-                      Get Started
+                      Sign In
                     </Button>
                   </div>
                 )}
@@ -266,11 +332,11 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
               </div>
 
               {/* Footer - Sign Out */}
-              {user && (
+              {user && !authLoading && (
                 <div className="p-4 border-t border-border">
                   <Button
                     variant="ghost"
-                    className="w-full justify-start gap-3"
+                    className="w-full justify-start gap-3 text-destructive hover:text-destructive hover:bg-destructive/10"
                     onClick={() => {
                       signOut();
                       closeMenu();
@@ -289,7 +355,7 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
       <AuthDialog 
         open={authOpen} 
         onOpenChange={setAuthOpen}
-        defaultMode="signup"
+        defaultMode={authMode}
       />
     </>
   );

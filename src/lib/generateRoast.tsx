@@ -1,11 +1,12 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { ROAST_PERSONAS, getRandomPersona, type PersonaKey } from './roastPersonas';
 import { AFFILIATE_LINKS, SPONSORED_TOOLS, getAffiliateLink, isSponsoredTool } from '@/data/affiliateLinks';
+import { callAIWithFallback } from './aiProvider';
 
 const apiKey = import.meta.env.VITE_GOOGLE_AI_API_KEY;
 
 if (!apiKey) {
-  console.warn('VITE_GOOGLE_AI_API_KEY is not set. AI roast generation will fail.');
+  console.warn('VITE_GOOGLE_AI_API_KEY is not set. AI roast generation will use backup provider if configured.');
 }
 
 const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
@@ -103,21 +104,14 @@ export async function generateRoast(
   const prompt = buildPrompt(stackName, tools, persona);
 
   try {
-    if (!genAI) {
-      throw new Error('Google AI API key is not configured. Please set VITE_GOOGLE_AI_API_KEY in your .env file.');
-    }
+    console.log('Calling AI API for roast generation...');
+    const { text: roastText, provider } = await callAIWithFallback(prompt, {
+      model: 'gemini-2.0-flash-exp', // Will be auto-mapped for Groq if needed
+      temperature: 0.8,
+      maxTokens: 1000,
+    });
 
-    console.log('Calling Gemini API with model: gemini-2.0-flash-exp');
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const roastText = response.text();
-
-    if (!roastText) {
-      throw new Error('Gemini returned empty response');
-    }
-
-    console.log('Gemini response received, length:', roastText.length);
+    console.log(`${provider === 'gemini' ? 'Gemini' : 'Groq'} response received, length:`, roastText.length);
     const burnScore = calculateBurnScore(roastText, tools);
 
     return {
@@ -145,28 +139,62 @@ export async function generateRoastStreaming(
   const prompt = buildPrompt(stackName, tools, persona);
 
   try {
-    if (!genAI) {
-      throw new Error('Google AI API key is not configured. Please set VITE_GOOGLE_AI_API_KEY in your .env file.');
+    // For streaming, we'll use Gemini if available, otherwise fall back to non-streaming
+    if (genAI) {
+      try {
+        console.log('Calling Gemini API (streaming) with model: gemini-2.0-flash-exp');
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+        
+        const result = await model.generateContentStream(prompt);
+        
+        let fullText = '';
+        
+        for await (const chunk of result.stream) {
+          const chunkText = chunk.text();
+          fullText += chunkText;
+          callbacks.onChunk(chunkText, fullText);
+        }
+
+        if (!fullText) {
+          throw new Error('Gemini returned empty response');
+        }
+
+        console.log('Streaming complete, total length:', fullText.length);
+        const burnScore = calculateBurnScore(fullText, tools);
+
+        callbacks.onComplete({
+          roastText: fullText,
+          burnScore,
+          persona: persona.name,
+          personaKey: selectedPersona,
+        });
+        return;
+      } catch (error: any) {
+        console.warn('Gemini streaming failed, falling back to non-streaming:', error.message);
+        // Fall through to non-streaming backup
+      }
     }
 
-    console.log('Calling Gemini API (streaming) with model: gemini-2.0-flash-exp');
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
-    
-    const result = await model.generateContentStream(prompt);
-    
-    let fullText = '';
-    
-    for await (const chunk of result.stream) {
-      const chunkText = chunk.text();
-      fullText += chunkText;
-      callbacks.onChunk(chunkText, fullText);
+    // Fallback: Use non-streaming API with fallback
+    console.log('Using non-streaming fallback...');
+    const { text: fullText, provider } = await callAIWithFallback(prompt, {
+      model: 'gemini-2.0-flash-exp', // Will be auto-mapped for Groq if needed
+      temperature: 0.8,
+      maxTokens: 1000,
+    });
+
+    // Simulate streaming by sending chunks
+    const words = fullText.split(' ');
+    let accumulated = '';
+    for (let i = 0; i < words.length; i++) {
+      const chunk = words[i] + (i < words.length - 1 ? ' ' : '');
+      accumulated += chunk;
+      callbacks.onChunk(chunk, accumulated);
+      // Small delay to simulate streaming
+      await new Promise(resolve => setTimeout(resolve, 20));
     }
 
-    if (!fullText) {
-      throw new Error('Gemini returned empty response');
-    }
-
-    console.log('Streaming complete, total length:', fullText.length);
+    console.log(`${provider} response complete, total length:`, fullText.length);
     const burnScore = calculateBurnScore(fullText, tools);
 
     callbacks.onComplete({
@@ -519,6 +547,111 @@ interface UserContext {
   priorities?: string[];
 }
 
+// Build prompt for generating stack improvements (for Fix My Stack)
+function buildImprovementsPrompt(
+  stackName: string,
+  tools: Tool[]
+): string {
+  const toolsList = tools
+    .map(t => {
+      const cost = t.base_price ? `$${t.base_price}/month` : 'Free';
+      return `- ${t.name}${t.category ? ` (${t.category})` : ''} - ${cost}`;
+    })
+    .join('\n');
+
+  return `You are an expert tech stack consultant. Analyze this tech stack and identify missing critical tools, optimization opportunities, and areas for improvement.
+
+Stack Name: "${stackName}"
+Current Tools:
+${toolsList}
+
+Your task:
+1. Identify 2-5 critical missing tools or categories (e.g., authentication, monitoring, analytics, payments, email, CI/CD, database backups, etc.)
+2. For each missing/weak area, provide:
+   - A clear issue description
+   - A specific recommendation
+   - The category it belongs to
+   - Severity level: "high" (critical, should add immediately), "medium" (important for production), "low" (nice to have)
+
+Focus on:
+- Security essentials (auth, security scanning)
+- Production readiness (monitoring, error tracking, logging)
+- Business essentials (analytics, payments, email)
+- Developer experience (CI/CD, testing tools)
+- Performance (caching, CDN, optimization)
+
+Return ONLY valid JSON in this exact format (no markdown, no code blocks):
+{
+  "suggestions": [
+    {
+      "issue": "Missing authentication service",
+      "recommendation": "Add an authentication service like Clerk or Supabase Auth to secure user accounts and manage sessions",
+      "category": "Authentication",
+      "severity": "high",
+      "tool_name": "Clerk"
+    }
+  ]
+}
+
+Be specific and actionable. Prioritize production-critical tools.`;
+}
+
+// Generate stack improvements using Gemini AI (for Fix My Stack feature)
+export async function generateStackImprovements(
+  stackName: string,
+  tools: Tool[]
+): Promise<{ suggestions: Array<{
+  issue: string;
+  recommendation: string;
+  category: string;
+  severity: string;
+  tool_name: string;
+}> }> {
+  const prompt = buildImprovementsPrompt(stackName, tools);
+
+  try {
+    console.log('Calling AI API for stack improvements...');
+    const { text, provider } = await callAIWithFallback(prompt, {
+      model: 'gemini-2.0-flash-exp', // Will be auto-mapped for Groq if needed
+      temperature: 0.7,
+      maxTokens: 2048,
+    });
+
+    console.log(`${provider === 'gemini' ? 'Gemini' : 'Groq'} response received`);
+
+    // Parse JSON from response (remove markdown code blocks if present)
+    let jsonText = text.trim();
+    if (jsonText.startsWith('```json')) {
+      jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+    } else if (jsonText.startsWith('```')) {
+      jsonText = jsonText.replace(/```\n?/g, '');
+    }
+
+    const improvements = JSON.parse(jsonText);
+    return improvements;
+  } catch (error: any) {
+    console.error('Error generating stack improvements:', error);
+    
+    const normalizedError = normalizeError(error);
+    
+    // If JSON parsing fails, try to extract JSON from the response
+    if (error.message?.includes('JSON') || error.message?.includes('parse')) {
+      const text = error.response?.text() || error.message || '';
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try {
+          const improvements = JSON.parse(jsonMatch[0]);
+          return improvements;
+        } catch (e) {
+          console.error('Failed to parse extracted JSON:', e);
+        }
+      }
+    }
+    
+    throw new Error(normalizedError);
+  }
+}
+
 // Build prompt for generating stack alternatives
 function buildAlternativesPrompt(
   stackName: string,
@@ -599,19 +732,14 @@ export async function generateStackAlternatives(
   const prompt = buildAlternativesPrompt(stackName, tools, userContext);
 
   try {
-    if (!genAI) {
-      throw new Error('Google AI API key is not configured. Please set VITE_GOOGLE_AI_API_KEY in your .env file.');
-    }
+    console.log('Calling AI API for stack alternatives...');
+    const { text, provider } = await callAIWithFallback(prompt, {
+      model: 'gemini-2.0-flash-exp', // Will be auto-mapped for Groq if needed
+      temperature: 0.7,
+      maxTokens: 2048,
+    });
 
-    console.log('Calling Gemini API for stack alternatives with model: gemini-2.0-flash-exp');
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
-
-    if (!text) {
-      throw new Error('Gemini returned empty response');
-    }
+    console.log(`${provider === 'gemini' ? 'Gemini' : 'Groq'} response received`);
 
     // Parse JSON from response (remove markdown code blocks if present)
     let jsonText = text.trim();

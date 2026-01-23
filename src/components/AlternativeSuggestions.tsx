@@ -43,6 +43,14 @@ export function AlternativeSuggestions({
 
   useEffect(() => {
     async function loadAlternatives() {
+      // Check if we have tools to analyze
+      if (!tools || tools.length === 0) {
+        console.warn('⚠️ No tools provided for alternatives analysis');
+        setError('No tools in this stack to analyze');
+        setLoading(false);
+        return;
+      }
+      
       if (existingAlternatives) {
         setAlternatives(existingAlternatives);
         setLoading(false);
@@ -80,6 +88,9 @@ export function AlternativeSuggestions({
         setLoading(true);
         setError(null);
         
+        console.log('🔄 Generating alternatives for stack:', stackName);
+        console.log('🔧 Tools:', tools.map(t => t.name));
+        
         const result = await generateStackAlternatives(
           stackName,
           tools.map(t => ({
@@ -89,6 +100,7 @@ export function AlternativeSuggestions({
           }))
         );
 
+        console.log('✅ Alternatives generated successfully:', result);
         setAlternatives(result);
 
         // Save to database (if column exists)
@@ -117,9 +129,27 @@ export function AlternativeSuggestions({
           // Don't fail the whole operation if DB save fails
         }
       } catch (err: any) {
-        console.error('Error generating alternatives:', err);
-        setError(err.message || 'Failed to generate alternatives');
-        toast.error('Failed to generate alternatives. Please try again.');
+        console.error('❌ Error generating alternatives:', err);
+        console.error('Error details:', {
+          message: err.message,
+          name: err.name,
+          stack: err.stack,
+        });
+        
+        // Provide more specific error messages
+        let errorMessage = 'Failed to generate alternatives';
+        if (err.message?.includes('API key')) {
+          errorMessage = 'AI API key is not configured. Please contact the administrator.';
+        } else if (err.message?.includes('Rate limit') || err.message?.includes('quota')) {
+          errorMessage = 'Rate limit reached. Please try again in a few moments.';
+        } else if (err.message?.includes('network') || err.message?.includes('fetch')) {
+          errorMessage = 'Network error. Please check your connection and try again.';
+        } else if (err.message) {
+          errorMessage = err.message;
+        }
+        
+        setError(errorMessage);
+        toast.error(errorMessage);
       } finally {
         setLoading(false);
       }

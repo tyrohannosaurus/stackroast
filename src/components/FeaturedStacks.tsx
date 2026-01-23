@@ -12,10 +12,8 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from '@/components/ui/carousel';
-import { Sparkles, ExternalLink, ArrowRight } from 'lucide-react';
+import { Sparkles, ArrowRight } from 'lucide-react';
 import { trackFeaturedStackClick } from '@/lib/analytics';
-// Autoplay plugin - optional, carousel works fine without it
-// To enable autoplay, install: npm install embla-carousel-autoplay
 
 interface FeaturedStack {
   id: string;
@@ -28,9 +26,6 @@ interface FeaturedStack {
     id: string;
     name: string;
     slug: string;
-    burn_score?: number;
-    total_cost?: number;
-    ai_roast_summary?: string;
   };
 }
 
@@ -51,6 +46,8 @@ export function FeaturedStacks({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
     async function loadFeaturedStacks() {
       try {
         const { data, error } = await supabase
@@ -65,10 +62,7 @@ export function FeaturedStacks({
             stack:stacks (
               id,
               name,
-              slug,
-              burn_score,
-              total_cost,
-              ai_roast_summary
+              slug
             )
           `)
           .eq('active', true)
@@ -80,15 +74,51 @@ export function FeaturedStacks({
 
         if (error) throw error;
 
-        setFeaturedStacks((data || []) as FeaturedStack[]);
-      } catch (error) {
-        console.error('Error loading featured stacks:', error);
+        // Only update state if component is still mounted
+        if (isMounted) {
+          // Transform data - stack comes as array from Supabase join, extract first item
+          const transformedData = (data || []).map((item: any) => {
+            const stack = Array.isArray(item.stack) ? item.stack[0] : item.stack;
+            if (!stack) return null; // Filter out items without stack data
+            
+            return {
+              id: item.id,
+              stack_id: item.stack_id,
+              sponsor_name: item.sponsor_name,
+              sponsor_logo_url: item.sponsor_logo_url,
+              cta_text: item.cta_text,
+              priority: item.priority,
+              stack: {
+                id: stack.id,
+                name: stack.name,
+                slug: stack.slug,
+              },
+            };
+          }).filter((item: any) => item !== null) as FeaturedStack[];
+          
+          setFeaturedStacks(transformedData);
+        }
+      } catch (error: any) {
+        // Ignore AbortError (expected in React Strict Mode)
+        if (error?.name === 'AbortError' || error?.message?.includes('aborted')) {
+          return;
+        }
+        
+        if (isMounted) {
+          console.error('Error loading featured stacks:', error);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     }
 
     loadFeaturedStacks();
+
+    return () => {
+      isMounted = false;
+    };
   }, [limit]);
 
   const handleClick = async (featuredStack: FeaturedStack) => {
@@ -144,14 +174,9 @@ export function FeaturedStacks({
               <h3 className="text-xl font-bold mb-2 text-foreground">
                 {stack.stack.name}
               </h3>
-              <p className="text-sm text-muted-foreground mb-1">
+              <p className="text-sm text-muted-foreground mb-4">
                 Sponsored by {stack.sponsor_name}
               </p>
-              {stack.stack.ai_roast_summary && (
-                <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                  {stack.stack.ai_roast_summary}
-                </p>
-              )}
               <Button
                 onClick={() => handleClick(stack)}
                 className="bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600"
@@ -167,9 +192,6 @@ export function FeaturedStacks({
   }
 
   // Multiple featured stacks - use carousel
-  // Note: Autoplay can be added by installing embla-carousel-autoplay
-  // For now, carousel works without autoplay (users can manually navigate)
-
   return (
     <div className={`space-y-4 ${className}`}>
       <div className="flex items-center gap-2">
@@ -212,30 +234,9 @@ export function FeaturedStacks({
                       <h3 className="text-xl font-bold mb-2 text-foreground">
                         {stack.stack.name}
                       </h3>
-                      <p className="text-sm text-muted-foreground mb-1">
+                      <p className="text-sm text-muted-foreground mb-4">
                         Sponsored by {stack.sponsor_name}
                       </p>
-                      {stack.stack.ai_roast_summary && (
-                        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                          {stack.stack.ai_roast_summary}
-                        </p>
-                      )}
-                      {stack.stack.burn_score !== undefined && (
-                        <div className="flex items-center gap-4 mb-4 text-sm">
-                          <div className="flex items-center gap-1">
-                            <span className="text-orange-500 font-bold">
-                              {stack.stack.burn_score}
-                            </span>
-                            <span className="text-muted-foreground">burn score</span>
-                          </div>
-                          {stack.stack.total_cost !== undefined &&
-                            stack.stack.total_cost > 0 && (
-                              <div className="text-muted-foreground">
-                                ${stack.stack.total_cost.toFixed(0)}/mo
-                              </div>
-                            )}
-                        </div>
-                      )}
                       <Button
                         onClick={() => handleClick(stack)}
                         className="bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600"

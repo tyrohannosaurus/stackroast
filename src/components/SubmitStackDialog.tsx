@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,7 @@ interface SubmitStackDialogProps {
 }
 
 export function SubmitStackDialog({ open, onOpenChange }: SubmitStackDialogProps) {
+  const navigate = useNavigate();
   const [authOpen, setAuthOpen] = useState(false);
   const [stackName, setStackName] = useState("");
   const [selectedTools, setSelectedTools] = useState<Tool[]>([]);
@@ -40,7 +42,7 @@ export function SubmitStackDialog({ open, onOpenChange }: SubmitStackDialogProps
   const [selectedPersona, setSelectedPersona] = useState<PersonaKey | 'random'>('random');
   
   const { toast } = useToast();
-  const { user, profile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
 
   // Load tools when dialog opens
   useEffect(() => {
@@ -56,85 +58,251 @@ export function SubmitStackDialog({ open, onOpenChange }: SubmitStackDialogProps
   }, [open]);
 
   const loadTools = async () => {
+    console.log('🔧 Loading tools...');
     const { data, error } = await supabase
       .from("tools")
       .select("id, name, slug, logo_url, category")
       .order("priority_score", { ascending: false });
 
     if (error) {
-      console.error("Error loading tools:", error);
+      console.error("❌ Error loading tools:", error);
+      toast({
+        title: "Error loading tools",
+        description: error.message || "Could not load tools. Please refresh the page.",
+        variant: "destructive",
+      });
       return;
     }
 
+    console.log(`✅ Loaded ${data?.length || 0} tools`);
+    if (data && data.length > 0) {
+      console.log('Sample tool:', data[0]);
+    } else {
+      console.warn('⚠️ No tools found in database. Run SEED_TOOLS_SIMPLE.sql in Supabase.');
+    }
     setTools(data || []);
   };
 
   const toggleTool = (tool: Tool) => {
-    setSelectedTools((prev) =>
-      prev.find((t) => t.id === tool.id)
+    console.log('🛠️ Toggling tool:', tool.name, tool.id);
+    setSelectedTools((prev) => {
+      const isSelected = prev.find((t) => t.id === tool.id);
+      const newSelection = isSelected
         ? prev.filter((t) => t.id !== tool.id)
-        : [...prev, tool]
-    );
+        : [...prev, tool];
+      console.log(`✅ Tool ${isSelected ? 'removed' : 'added'}. Total selected: ${newSelection.length}`);
+      return newSelection;
+    });
   };
 
   const handleSubmit = async () => {
-    // Validation
-    if (!stackName.trim()) {
+    try {
+      console.log('🔘 Submit button clicked!', {
+        stackName,
+        selectedToolsCount: selectedTools.length,
+        user: user?.id,
+        loading,
+        selectedPersona
+      });
+
+      // Validation
+      if (!stackName.trim()) {
+        console.warn('⚠️ Validation failed: No stack name');
+        toast({
+          title: "Missing stack name",
+          description: "Please enter a name for your stack.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (selectedTools.length === 0) {
+        console.warn('⚠️ Validation failed: No tools selected');
+        toast({
+          title: "No tools selected",
+          description: "Please select at least one tool.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validate tools have IDs
+      const toolsWithoutIds = selectedTools.filter(t => !t.id);
+      if (toolsWithoutIds.length > 0) {
+        console.error('❌ Some tools are missing IDs:', toolsWithoutIds);
+        toast({
+          title: "Invalid tools",
+          description: "Some selected tools are invalid. Please refresh and try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check if user is logged in
+      if (!user) {
+        console.log('👤 User not logged in, opening auth dialog');
+        // Store the submission data and show auth dialog
+        setPendingSubmission({
+          stackName: stackName,
+          tools: selectedTools,
+        });
+        onOpenChange(false); // Close stack dialog
+        setAuthOpen(true); // Open auth dialog
+        return;
+      }
+
+      console.log('✅ All validations passed, proceeding with submission');
+      
+      // Show immediate feedback
       toast({
-        title: "Missing stack name",
-        description: "Please enter a name for your stack.",
+        title: "Submitting...",
+        description: "Creating your stack...",
+        duration: 2000,
+      });
+      
+      // User is logged in, proceed with submission
+      console.log('📞 Calling submitStack function...');
+      await submitStack(stackName, selectedTools);
+      console.log('✅ submitStack function completed');
+    } catch (error: any) {
+      console.error('❌ Error in handleSubmit:', error);
+      toast({
+        title: "Submission Error",
+        description: error.message || "An unexpected error occurred. Please check the console.",
         variant: "destructive",
       });
-      return;
+    }
+  };
+
+  // Helper function to ensure profile exists
+  const ensureProfileExists = async (userId: string): Promise<string> => {
+    // Get the current authenticated user to ensure we use auth.uid()
+    const { data: userData, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !userData.user) {
+      throw new Error("User not authenticated");
+    }
+    
+    const currentUser = userData.user;
+    const authUid = currentUser.id;
+    
+    // Ensure the userId parameter matches auth.uid() for RLS policy
+    if (userId !== authUid) {
+      console.warn('⚠️ userId parameter does not match auth.uid(), using auth.uid() instead');
+    }
+    
+    // Use auth.uid() to ensure RLS policy works
+    const profileId = authUid;
+    
+    // First, check if profile exists
+    const { data: existingProfile, error: checkError } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("id", profileId)
+      .maybeSingle();
+
+    if (existingProfile) {
+      console.log('✅ Profile exists:', profileId);
+      return profileId;
     }
 
-    if (selectedTools.length === 0) {
-      toast({
-        title: "No tools selected",
-        description: "Please select at least one tool.",
-        variant: "destructive",
-      });
-      return;
+    // Profile doesn't exist, create it
+    console.log('⚠️ Profile does not exist, creating...');
+
+    // Generate username from email or metadata
+    const username = 
+      currentUser.user_metadata?.username ||
+      currentUser.user_metadata?.name?.toLowerCase().replace(/\s+/g, '_') ||
+      currentUser.email?.split('@')[0] ||
+      `user_${profileId.slice(0, 8)}`;
+
+    console.log('📝 Attempting to create profile with:', {
+      id: profileId,
+      username: username,
+      auth_uid: authUid,
+      matches: profileId === authUid
+    });
+
+    const { data: newProfile, error: createError } = await supabase
+      .from("profiles")
+      .insert({
+        id: profileId, // Must match auth.uid() for RLS policy
+        username: username,
+        karma_points: 0,
+        avatar_url: currentUser.user_metadata?.avatar_url || null,
+      })
+      .select()
+      .single();
+
+    if (createError) {
+      // If it's a duplicate key error, profile was created by another process
+      if (createError.code === '23505' || createError.message?.includes('duplicate')) {
+        console.log('✅ Profile was created by another process');
+        return profileId;
+      }
+      
+      // If it's an RLS error, provide detailed debugging
+      if (createError.code === '42501') {
+        console.error('❌ RLS Policy Error - Profile INSERT policy violation');
+        console.error('Error details:', {
+          code: createError.code,
+          message: createError.message,
+          profileId: profileId,
+          authUid: authUid,
+          matches: profileId === authUid,
+          policyCheck: `id = auth.uid() should be: ${profileId} = ${authUid}`
+        });
+        throw new Error(`RLS policy error: Cannot create profile. Profile ID (${profileId}) must match auth.uid() (${authUid}).`);
+      }
+      
+      console.error('❌ Error creating profile:', createError);
+      throw new Error(`Failed to create profile: ${createError.message}`);
     }
 
-    // Check if user is logged in
-    if (!user) {
-      // Store the submission data and show auth dialog
-      setPendingSubmission({
-        stackName: stackName,
-        tools: selectedTools,
-      });
-      onOpenChange(false); // Close stack dialog
-      setAuthOpen(true); // Open auth dialog
-      return;
-    }
-
-    // User is logged in, proceed with submission
-    await submitStack(stackName, selectedTools);
+    console.log('✅ Profile created successfully:', newProfile.username);
+    return profileId;
   };
 
   const submitStack = async (name: string, tools: Tool[]) => {
     setLoading(true);
 
     try {
+      console.log('🚀 Starting stack submission:', { name, toolCount: tools.length });
+      
+      if (!user?.id) {
+        throw new Error("User not authenticated");
+      }
+
+      // Ensure profile exists before creating stack
+      console.log('🔍 Ensuring profile exists...');
+      const profileId = await ensureProfileExists(user.id);
+      console.log('✅ Profile ID confirmed:', profileId);
+      
       const slug = name
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/(^-|-$)/g, "");
 
-      // Create stack
+      console.log('📝 Generated slug:', slug);
+
+      // Create stack with confirmed profile_id
       const { data: stack, error: stackError } = await supabase
         .from("stacks")
         .insert({
           name: name,
           slug: slug,
-          profile_id: user?.id,
+          profile_id: profileId,
           is_public: true,
         })
         .select()
         .single();
 
-      if (stackError) throw stackError;
+      if (stackError) {
+        console.error('❌ Error creating stack:', stackError);
+        throw new Error(`Failed to create stack: ${stackError.message}`);
+      }
+
+      console.log('✅ Stack created:', stack.id);
 
       // Create stack_items
       const stackItems = tools.map((tool, index) => ({
@@ -143,66 +311,94 @@ export function SubmitStackDialog({ open, onOpenChange }: SubmitStackDialogProps
         sort_order: index,
       }));
 
+      console.log('📦 Creating stack items:', stackItems.length);
+
       const { error: itemsError } = await supabase
         .from("stack_items")
         .insert(stackItems);
 
-      if (itemsError) throw itemsError;
-
-      // Generate AI roast
-      try {
-        console.log('Starting AI roast generation for stack:', name);
-        console.log('Tools:', tools.map(t => t.name));
-        
-        // Determine which persona to use
-        const personaToUse = selectedPersona === 'random' ? getRandomPersona() : selectedPersona;
-        
-        const { roastText, burnScore, persona } = await generateRoast(
-          name,
-          tools.map(t => ({ name: t.name, category: t.category })),
-          personaToUse
-        );
-
-        console.log('Roast generated successfully:', { roastText: roastText.substring(0, 100), burnScore, persona });
-
-        // Save roast to database
-        const { error: roastError } = await supabase
-          .from('ai_roasts')
-          .insert({
-            stack_id: stack.id,
-            roast_text: roastText,
-            burn_score: burnScore,
-            persona: persona,
-          });
-
-        if (roastError) {
-          console.error('Error saving roast to database:', roastError);
-          toast({
-            title: "Roast generation issue",
-            description: "Stack created but AI roast couldn't be saved. You can regenerate it later.",
-            variant: "destructive",
-          });
-        } else {
-          console.log('Roast saved to database successfully');
-        }
-      } catch (roastError: any) {
-        console.error('Error generating roast:', roastError);
-        toast({
-          title: "AI Roast Failed",
-          description: roastError?.message || "Couldn't generate AI roast. Check if API key is configured.",
-          variant: "destructive",
-        });
-        // Don't throw - we still want the stack to be created
+      if (itemsError) {
+        console.error('❌ Error creating stack items:', itemsError);
+        throw new Error(`Failed to add tools: ${itemsError.message}`);
       }
 
+      console.log('✅ Stack items created successfully');
+
+      // Generate AI roast ASYNCHRONOUSLY (don't block submission)
+      // This runs in the background so rate limits don't block stack creation
+      // Wrap in setTimeout to ensure it doesn't block the main flow
+      setTimeout(() => {
+        (async () => {
+          try {
+            console.log('🔥 Starting AI roast generation in background for stack:', name);
+            console.log('Tools:', tools.map(t => t.name));
+            
+            // Determine which persona to use
+            let personaToUse: PersonaKey;
+            try {
+              personaToUse = selectedPersona === 'random' ? getRandomPersona() : selectedPersona;
+              console.log('🎭 Using persona:', personaToUse);
+            } catch (personaError: any) {
+              console.error('❌ Error getting persona, using random:', personaError);
+              personaToUse = getRandomPersona();
+            }
+            
+            // Add timeout to prevent hanging (30 seconds max)
+            const roastPromise = generateRoast(
+              name,
+              tools.map(t => ({ name: t.name, category: t.category })),
+              personaToUse
+            );
+            
+            const timeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Roast generation timeout (30s)')), 30000)
+            );
+            
+            const roastResult = await Promise.race([
+              roastPromise,
+              timeoutPromise
+            ]) as { roastText: string; burnScore: number; persona: string; personaKey: string };
+            
+            const { roastText, burnScore, persona } = roastResult;
+
+            console.log('✅ Roast generated successfully:', { roastText: roastText.substring(0, 100), burnScore, persona });
+
+            // Save roast to database
+            const { error: roastError } = await supabase
+              .from('ai_roasts')
+              .insert({
+                stack_id: stack.id,
+                roast_text: roastText,
+                burn_score: burnScore,
+                persona: persona,
+              });
+
+            if (roastError) {
+              console.error('❌ Error saving roast to database:', roastError);
+            } else {
+              console.log('✅ Roast saved to database successfully');
+            }
+          } catch (roastError: any) {
+            console.error('❌ Error generating roast (non-blocking):', roastError);
+            // Don't show toast here - stack was already created successfully
+            // User can regenerate roast later if needed
+          }
+        })();
+      }, 100); // Small delay to ensure stack creation completes first
+
       // Award karma for stack submission (+5 points)
-      if (profile) {
-        await supabase.rpc("award_karma", {
-          p_user_id: user!.id,
-          p_points: 5,
-          p_action_type: "stack_submit",
-          p_reference_id: stack.id,
-        });
+      if (profile && user) {
+        try {
+          await supabase.rpc("award_karma", {
+            user_uuid: user.id,
+            points: 5,
+          });
+          // Refresh profile to update karma display
+          await refreshProfile();
+        } catch (karmaError: any) {
+          // Don't fail the whole submission if karma award fails
+          console.error('Error awarding karma:', karmaError);
+        }
       }
 
       // Success!
@@ -214,23 +410,31 @@ export function SubmitStackDialog({ open, onOpenChange }: SubmitStackDialogProps
 
       toast({
         title: "🎉 Stack Submitted Successfully!",
-        description: `You earned 5 logs! Your "${name}" stack is being roasted by AI...`,
+        description: `You earned 5 logs! Your "${name}" stack is being roasted by AI in the background...`,
         duration: 5000, // Show for 5 seconds
       });
 
       // Navigate to the stack page
       setTimeout(() => {
-        window.location.href = `/stack/${slug}`;
+        navigate(`/stack/${slug}`);
       }, 1000);
 
       onOpenChange(false);
       setPendingSubmission(null);
     } catch (error: any) {
-      console.error("Error submitting stack:", error);
+      console.error("❌ Error submitting stack:", error);
+      console.error("Error details:", {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      });
+      
       toast({
-        title: "Error",
-        description: error.message || "Failed to submit stack. Please try again.",
+        title: "Error Submitting Stack",
+        description: error.message || "Failed to submit stack. Please check the console for details.",
         variant: "destructive",
+        duration: 5000,
       });
     } finally {
       setLoading(false);
@@ -363,19 +567,97 @@ export function SubmitStackDialog({ open, onOpenChange }: SubmitStackDialogProps
             <div className="flex justify-end gap-3 pt-4">
               <Button
                 variant="outline"
-                onClick={() => onOpenChange(false)}
+                type="button"
+                onClick={() => {
+                  console.log('❌ Cancel clicked');
+                  onOpenChange(false);
+                }}
               >
                 Cancel
               </Button>
-              <Button
-                onClick={handleSubmit}
+              <button
+                type="button"
+                onClick={async (e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  
+                  console.log('🔘🔘🔘 SUBMIT BUTTON CLICKED! 🔘🔘🔘');
+                  console.log('Button click event:', e);
+                  console.log('Current state:', {
+                    stackName: stackName?.trim(),
+                    stackNameLength: stackName?.trim().length,
+                    selectedToolsCount: selectedTools.length,
+                    selectedTools: selectedTools.map(t => ({ id: t.id, name: t.name })),
+                    user: user?.id,
+                    loading,
+                    disabled: loading || !stackName.trim() || selectedTools.length === 0,
+                    selectedPersona
+                  });
+                  
+                  // Double-check button isn't disabled
+                  if (loading) {
+                    console.warn('⚠️ Button is disabled: loading');
+                    toast({
+                      title: "Please wait",
+                      description: "Submission in progress...",
+                      variant: "default",
+                    });
+                    return;
+                  }
+                  if (!stackName.trim()) {
+                    console.warn('⚠️ Button is disabled: no stack name');
+                    toast({
+                      title: "Missing stack name",
+                      description: "Please enter a name for your stack.",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+                  if (selectedTools.length === 0) {
+                    console.warn('⚠️ Button is disabled: no tools selected');
+                    toast({
+                      title: "No tools selected",
+                      description: "Please select at least one tool.",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+                  
+                  console.log('✅ All checks passed, calling handleSubmit...');
+                  
+                  try {
+                    await handleSubmit();
+                    console.log('✅ handleSubmit completed');
+                  } catch (err: any) {
+                    console.error('❌❌❌ ERROR in button onClick:', err);
+                    console.error('Error stack:', err?.stack);
+                    toast({
+                      title: "Submission Error",
+                      description: err?.message || "An error occurred. Check console for details.",
+                      variant: "destructive",
+                      duration: 10000,
+                    });
+                  }
+                }}
                 disabled={loading || !stackName.trim() || selectedTools.length === 0}
-                className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
+                className="inline-flex items-center justify-center gap-2 rounded-md bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-medium px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                <Flame className="w-4 h-4 mr-2" />
+                <Flame className="w-4 h-4" />
                 {loading ? "Roasting..." : user ? "Submit & Roast" : "Sign In & Submit"}
-              </Button>
+              </button>
             </div>
+            
+            {/* Debug Info (remove in production) */}
+            {import.meta.env.DEV && (
+              <div className="text-xs text-muted-foreground pt-2 border-t space-y-1">
+                <div>Debug: Stack Name: "{stackName}" ({stackName.trim().length} chars)</div>
+                <div>Tools: {selectedTools.length} selected</div>
+                <div>User: {user ? `Yes (${user.id.substring(0, 8)}...)` : 'No'}</div>
+                <div>Loading: {loading ? 'Yes' : 'No'}</div>
+                <div>Persona: {selectedPersona}</div>
+                <div>Button Disabled: {loading || !stackName.trim() || selectedTools.length === 0 ? 'Yes' : 'No'}</div>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>

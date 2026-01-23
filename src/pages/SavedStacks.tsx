@@ -9,7 +9,7 @@ import { LoadingFire } from '@/components/LoadingFire';
 import { BookmarkCheck, ExternalLink, Trash2, Calendar, DollarSign } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
-import { migrateLocalStorageSaves } from '@/components/SaveStackButton';
+import { migrateLocalStorageSaves } from '@/lib/savedStacksMigration';
 
 interface SavedStack {
   id: string;

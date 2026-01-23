@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MessageSquare, TrendingUp, Flame } from 'lucide-react';
+import { MessageSquare, TrendingUp, Flame, Sparkles } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -69,6 +69,8 @@ export function StackCardFull({ stack, rank }: StackCardFullProps) {
     navigate(`/stack/${stack.slug}`);
   };
 
+  const hasRoast = stack.ai_roast_full && stack.ai_roast_full.trim().length > 0;
+
   return (
     <Card 
       className="p-6 bg-card border-border hover:border-orange-500/50 transition-all cursor-pointer group"
@@ -91,8 +93,9 @@ export function StackCardFull({ stack, rank }: StackCardFullProps) {
           </Avatar>
           <div>
             <Link 
-              to={`/@${stack.user.username}`}
+              to={`/user/${stack.user.username}`}
               className="font-medium text-foreground hover:text-orange-500 transition-colors"
+              onClick={(e) => e.stopPropagation()}
             >
               @{stack.user.username}
             </Link>
@@ -104,7 +107,7 @@ export function StackCardFull({ stack, rank }: StackCardFullProps) {
         
         {/* Burn Score */}
         <div className="text-center">
-          <div className="text-3xl font-bold text-gradient">
+          <div className="text-3xl font-bold bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent">
             {stack.burn_score}
           </div>
           <div className="text-xs text-muted-foreground">Burn Score</div>
@@ -131,27 +134,43 @@ export function StackCardFull({ stack, rank }: StackCardFullProps) {
         )}
       </div>
 
-      {/* Full AI Roast */}
-      <div className="bg-muted/50 rounded-lg p-4 mb-4 border border-border">
-        <div className="flex items-center gap-2 mb-2">
-          <Flame className="w-4 h-4 text-orange-400" />
-          <span className="text-sm font-medium text-orange-400">AI Roast</span>
+      {/* AI Roast or Placeholder */}
+      {hasRoast ? (
+        <div className="bg-gradient-to-br from-orange-500/10 via-red-500/10 to-orange-500/5 rounded-lg p-4 mb-4 border border-orange-500/20">
+          <div className="flex items-center gap-2 mb-2">
+            <Flame className="w-4 h-4 text-orange-400" />
+            <span className="text-sm font-medium text-orange-400">AI Roast</span>
+          </div>
+          <p className="text-foreground leading-relaxed whitespace-pre-wrap">
+            {stack.ai_roast_full}
+          </p>
         </div>
-        <p className="text-foreground leading-relaxed whitespace-pre-wrap">
-          {stack.ai_roast_full || "AI roast coming soon..."}
-        </p>
-      </div>
+      ) : (
+        <div className="bg-muted/30 rounded-lg p-4 mb-4 border border-border">
+          <div className="flex items-center gap-2 mb-2">
+            <Sparkles className="w-4 h-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-muted-foreground">AI Roast</span>
+          </div>
+          <p className="text-muted-foreground italic">
+            AI roast coming soon... Click to view this stack and generate a roast!
+          </p>
+        </div>
+      )}
 
       {/* Actions */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          <span className="flex items-center gap-1">
+          <button
+            onClick={handleUpvote}
+            disabled={isUpvoting}
+            className={`flex items-center gap-1 hover:text-orange-500 transition-colors ${hasUpvoted ? 'text-orange-500' : ''}`}
+          >
             <TrendingUp className="w-4 h-4" />
             {upvoteCount}
-          </span>
+          </button>
           <span className="flex items-center gap-1">
             <MessageSquare className="w-4 h-4" />
-            {stack.comment_count}
+            {stack.comment_count || 0}
           </span>
           <span className="flex items-center gap-1">
             👁 {stack.view_count}

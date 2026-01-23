@@ -22,6 +22,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { LoadingFire } from '@/components/LoadingFire';
 import { getAffiliateLink } from '@/data/affiliateLinks';
+import { trackAffiliateClick } from '@/lib/analytics';
 import { trackStackKitClone } from '@/lib/analytics';
 
 interface StackKitDetailDialogProps {
@@ -68,6 +69,12 @@ export function StackKitDetailDialog({ kit, open, onOpenChange }: StackKitDetail
       toolsWithAffiliates.forEach((tool, index) => {
         setTimeout(() => {
           if (tool.affiliate_url) {
+            trackAffiliateClick({
+              toolName: tool.name,
+              affiliateUrl: tool.affiliate_url,
+              source: "stack_kit",
+              userId: user?.id || null,
+            });
             window.open(tool.affiliate_url, '_blank', 'noopener,noreferrer');
           }
         }, index * 300); // 300ms delay between each link

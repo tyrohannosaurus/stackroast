@@ -14,6 +14,8 @@ export interface Stack {
     upvote_count: number;
     comment_count: number;
     roast_count: number;
+    community_votes?: number;
+    top_community_roast_score?: number | null;
     created_at: string;
     user: Profile;
   }
@@ -36,6 +38,9 @@ export interface Stack {
     logo_url?: string;
     category?: string;
     base_price?: number;
+  affiliate_url?: string;
+  affiliate_link?: string;
+  website_url?: string;
   }
   
   export type SortMode = 'hot' | 'new' | 'top';

@@ -44,7 +44,7 @@ interface CommunityRoastsTabProps {
 }
 
 export function CommunityRoastsTab({ stackId }: CommunityRoastsTabProps) {
-  const { user } = useAuth();
+  const { user, refreshProfile } = useAuth();
   const [roasts, setRoasts] = useState<CommunityRoast[]>([]);
   const [newRoast, setNewRoast] = useState("");
   const [loading, setLoading] = useState(false);
@@ -83,22 +83,29 @@ export function CommunityRoastsTab({ stackId }: CommunityRoastsTabProps) {
       return;
     }
 
-    if (user && data.length > 0) {
+    // Ensure upvotes and downvotes are always numbers
+    const normalizedData = (data || []).map((roast: any) => ({
+      ...roast,
+      upvotes: roast.upvotes ?? 0,
+      downvotes: roast.downvotes ?? 0,
+    }));
+
+    if (user && normalizedData.length > 0) {
       const { data: votes } = await supabase
         .from("roast_votes")
         .select("roast_id, vote_type")
         .eq("user_id", user.id)
-        .in("roast_id", data.map((r) => r.id));
+        .in("roast_id", normalizedData.map((r) => r.id));
 
       const voteMap = new Map(votes?.map((v) => [v.roast_id, v.vote_type]));
-      data.forEach((roast) => {
+      normalizedData.forEach((roast) => {
         roast.user_vote = voteMap.get(roast.id) as "up" | "down" | null;
       });
     }
 
     // Get comment counts for each roast
     const roastsWithCounts = await Promise.all(
-      data.map(async (roast) => {
+      normalizedData.map(async (roast) => {
         const { count } = await supabase
           .from("roast_comments")
           .select("*", { count: "exact", head: true })
@@ -172,11 +179,12 @@ export function CommunityRoastsTab({ stackId }: CommunityRoastsTabProps) {
 
       // Award karma for commenting (+1)
       await supabase.rpc("award_karma", {
-        p_user_id: user.id,
-        p_points: 1,
-        p_action_type: "comment_submit",
-        p_reference_id: roastId,
+        user_uuid: user.id,
+        points: 1,
       });
+
+      // Refresh profile to update karma display
+      await refreshProfile();
 
       toast.success("Comment added! +1 log");
       setReplyText("");
@@ -226,11 +234,12 @@ export function CommunityRoastsTab({ stackId }: CommunityRoastsTabProps) {
       if (error) throw error;
 
       await supabase.rpc("award_karma", {
-        p_user_id: user.id,
-        p_points: 2,
-        p_action_type: "roast_submit",
-        p_reference_id: stackId,
+        user_uuid: user.id,
+        points: 2,
       });
+
+      // Refresh profile to update karma display
+      await refreshProfile();
 
       toast.success("Roast submitted! +2 logs 🔥");
       setNewRoast("");
@@ -261,7 +270,13 @@ export function CommunityRoastsTab({ stackId }: CommunityRoastsTabProps) {
     }
   };
 
-  const getScore = (roast: CommunityRoast) => roast.upvotes - roast.downvotes;
+  const getScore = (roast: CommunityRoast) => {
+    const upvotes = roast.upvotes ?? 0;
+    const downvotes = roast.downvotes ?? 0;
+    const score = upvotes - downvotes;
+    // Ensure we never return NaN
+    return isNaN(score) ? 0 : score;
+  };
 
   return (
     <div className="space-y-6">

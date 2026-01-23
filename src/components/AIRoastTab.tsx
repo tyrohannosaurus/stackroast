@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Flame, RefreshCw, Share2, Download } from "lucide-react";
+import { Flame, RefreshCw, Share2, Download, ArrowUp, ArrowDown } from "lucide-react";
 import { generateRoastStreaming } from "@/lib/generateRoast";
 import { BurnCardDialog } from "@/components/BurnCard";
 import { LoadingFire } from "@/components/LoadingFire";
@@ -12,9 +12,14 @@ import { sendRoastNotificationEmail } from "@/lib/emailService";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface AIRoast {
+  id: string;
   roast_text: string;
   burn_score: number;
+  ai_burn_score?: number; // Original AI-generated score
   persona: string;
+  upvotes: number;
+  downvotes: number;
+  user_vote?: "up" | "down" | null;
 }
 
 interface StackInfo {
@@ -38,30 +43,153 @@ export function AIRoastTab({ stackId, stackSlug }: AIRoastTabProps) {
   const [selectedPersona, setSelectedPersona] = useState<PersonaKey | 'random'>('random');
   const [streamingText, setStreamingText] = useState<string>('');
   const [streamingPersona, setStreamingPersona] = useState<string>('');
+  const [votingEnabled, setVotingEnabled] = useState(false); // Track if voting migration is available
   const roastContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadAiRoast();
     loadStackInfo();
-  }, [stackId]);
+  }, [stackId, user]); // Reload when user changes to update vote status
 
   const loadAiRoast = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      // Try to load with new columns first, fallback to old structure if migration not run
+      let { data, error } = await supabase
         .from("ai_roasts")
-        .select("roast_text, burn_score, persona")
+        .select("id, roast_text, burn_score, ai_burn_score, persona, upvotes, downvotes")
         .eq("stack_id", stackId)
         .maybeSingle();
 
-      if (error) {
+      // If columns don't exist, try without them
+      if (error && (error.code === '42703' || error.message?.includes('does not exist'))) {
+        console.warn("Voting columns not found, using basic query. Run migration 20250122_add_ai_roast_voting.sql");
+        const fallbackResult = await supabase
+          .from("ai_roasts")
+          .select("id, roast_text, burn_score, persona")
+          .eq("stack_id", stackId)
+          .maybeSingle();
+        
+        if (fallbackResult.error) {
+          console.error("Error loading AI roast:", fallbackResult.error);
+          return;
+        }
+        
+        data = fallbackResult.data;
+        error = null;
+      } else if (error) {
         console.error("Error loading AI roast:", error);
         return;
       }
-
-      setAiRoast(data);
+      
+      if (data) {
+        // Load user's vote if logged in
+        let userVote: "up" | "down" | null = null;
+        if (user) {
+          const { data: voteData } = await supabase
+            .from("ai_roast_votes")
+            .select("vote_type")
+            .eq("ai_roast_id", data.id)
+            .eq("user_id", user.id)
+            .maybeSingle();
+          
+          userVote = voteData?.vote_type as "up" | "down" | null;
+        }
+        
+        // Ensure all numeric fields are properly set (handle missing columns if migration not run)
+        const upvotes = typeof data.upvotes === 'number' ? data.upvotes : 0;
+        const downvotes = typeof data.downvotes === 'number' ? data.downvotes : 0;
+        const burnScore = typeof data.burn_score === 'number' ? data.burn_score : 0;
+        const aiBurnScore = typeof data.ai_burn_score === 'number' ? data.ai_burn_score : burnScore;
+        
+        // Ensure ID is present
+        if (!data.id) {
+          console.error("AI roast data missing ID:", data);
+          setAiRoast(null);
+          return;
+        }
+        
+        // Check if voting columns exist (migration has been run)
+        const hasVotingColumns = typeof data.upvotes !== 'undefined' || typeof data.downvotes !== 'undefined';
+        setVotingEnabled(hasVotingColumns);
+        
+        setAiRoast({
+          id: data.id, // Explicitly set ID first
+          roast_text: data.roast_text,
+          burn_score: burnScore,
+          ai_burn_score: aiBurnScore,
+          persona: data.persona,
+          upvotes,
+          downvotes,
+          user_vote: userVote,
+        });
+      } else {
+        setAiRoast(null);
+      }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleVote = async (voteType: "up" | "down") => {
+    if (!user) {
+      toast.error("Please sign in to vote");
+      return;
+    }
+
+    if (!aiRoast) {
+      toast.error("Roast not loaded");
+      return;
+    }
+
+    // Get the roast ID - try from aiRoast.id first, or fetch it if missing
+    let roastId = aiRoast.id;
+    
+    if (!roastId) {
+      console.warn("AI roast ID missing, fetching from database...");
+      // Fetch the roast ID from database
+      const { data, error } = await supabase
+        .from("ai_roasts")
+        .select("id")
+        .eq("stack_id", stackId)
+        .maybeSingle();
+      
+      if (error || !data?.id) {
+        console.error("Could not find AI roast ID:", error);
+        toast.error("Could not find roast. Please refresh the page.");
+        return;
+      }
+      
+      roastId = data.id;
+      // Update the aiRoast state with the ID
+      setAiRoast({ ...aiRoast, id: roastId });
+    }
+
+    try {
+      console.log('Voting on AI roast:', { roastId, voteType, userId: user.id });
+      
+      const { error: rpcError } = await supabase.rpc("handle_ai_roast_vote", {
+        p_ai_roast_id: roastId,
+        p_user_uuid: user.id,
+        p_vote_type: voteType === "up" ? "up" : "down",
+      });
+
+      if (rpcError) {
+        // Check if RPC function doesn't exist (migration not run)
+        if (rpcError.code === '42883' || rpcError.message?.includes('does not exist') || rpcError.message?.includes('404')) {
+          toast.error("Voting feature not available. Please run the database migration first.");
+          console.error("RPC function handle_ai_roast_vote not found. Run migration: supabase/migrations/20250122_add_ai_roast_voting.sql");
+          return;
+        }
+        throw rpcError;
+      }
+
+      // Reload the roast to get updated scores
+      await loadAiRoast();
+      toast.success(voteType === "up" ? "Upvoted! 🔥" : "Downvoted");
+    } catch (error: any) {
+      console.error("Error voting on AI roast:", error);
+      toast.error(error.message || "Failed to vote");
     }
   };
 
@@ -153,23 +281,40 @@ export function AIRoastTab({ stackId, stackSlug }: AIRoastTabProps) {
             // Save to database
             await supabase.from("ai_roasts").delete().eq("stack_id", stackId);
 
-            const { error: insertError } = await supabase.from("ai_roasts").insert({
+            // Try to insert with new columns, fallback if migration not run
+            const insertData: any = {
               stack_id: stackId,
               roast_text: result.roastText,
               burn_score: result.burnScore,
               persona: result.persona,
-            });
+            };
+            
+            // Only add new columns if they exist (migration has been run)
+            try {
+              // Check if columns exist by trying a select
+              const { error: testError } = await supabase
+                .from("ai_roasts")
+                .select("ai_burn_score")
+                .limit(0);
+              
+              if (!testError || testError.code !== '42703') {
+                // Columns exist, add them
+                insertData.ai_burn_score = result.burnScore;
+                insertData.upvotes = 0;
+                insertData.downvotes = 0;
+              }
+            } catch {
+              // Columns don't exist, use basic insert
+            }
+            
+            const { error: insertError } = await supabase.from("ai_roasts").insert(insertData);
 
             if (insertError) {
               console.error("Failed to save roast:", insertError.message);
             }
 
-            // Set final roast state
-            setAiRoast({ 
-              roast_text: result.roastText, 
-              burn_score: result.burnScore, 
-              persona: result.persona 
-            });
+            // Reload roast to get the ID and proper structure with voting data
+            await loadAiRoast();
             setStreamingText('');
             setGenerating(false);
             toast.success("AI roast generated! 🔥");
@@ -257,8 +402,8 @@ export function AIRoastTab({ stackId, stackSlug }: AIRoastTabProps) {
         {/* Burn Score Badge */}
         <div className="absolute top-4 right-4 z-10">
           <div className="text-center bg-card/90 backdrop-blur-sm rounded-lg p-3 border border-orange-500/30">
-            <div className={`text-5xl font-bold ${aiRoast ? getBurnScoreColor(aiRoast.burn_score) : 'text-muted-foreground'}`}>
-              {aiRoast ? aiRoast.burn_score : '--'}
+            <div className={`text-5xl font-bold ${aiRoast ? getBurnScoreColor(aiRoast.burn_score ?? 0) : 'text-muted-foreground'}`}>
+              {aiRoast ? (aiRoast.burn_score ?? 0) : '--'}
             </div>
             <div className="text-xs text-muted-foreground font-medium">/100 BURN</div>
           </div>
@@ -322,6 +467,48 @@ export function AIRoastTab({ stackId, stackSlug }: AIRoastTabProps) {
                   "{aiRoast.roast_text}"
                 </blockquote>
               </div>
+
+              {/* Voting Section - Only show if voting is enabled */}
+              {votingEnabled && (
+                <div className="flex items-center gap-4 pt-4 border-t border-orange-500/20">
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleVote("up")}
+                      className={`h-8 w-8 p-0 ${aiRoast.user_vote === "up" ? "text-orange-500 bg-orange-500/10" : "text-muted-foreground hover:text-orange-500"}`}
+                      disabled={!user}
+                      title={user ? "Upvote this roast" : "Sign in to vote"}
+                    >
+                      <ArrowUp className="w-5 h-5" />
+                    </Button>
+                    <span className={`font-bold text-lg min-w-[2rem] text-center ${
+                      ((aiRoast.upvotes ?? 0) - (aiRoast.downvotes ?? 0)) > 0 ? 'text-orange-500' : 
+                      ((aiRoast.upvotes ?? 0) - (aiRoast.downvotes ?? 0)) < 0 ? 'text-blue-500' : 
+                      'text-muted-foreground'
+                    }`}>
+                      {(aiRoast.upvotes ?? 0) - (aiRoast.downvotes ?? 0)}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleVote("down")}
+                      className={`h-8 w-8 p-0 ${aiRoast.user_vote === "down" ? "text-blue-500 bg-blue-500/10" : "text-muted-foreground hover:text-blue-500"}`}
+                      disabled={!user}
+                      title={user ? "Downvote this roast" : "Sign in to vote"}
+                    >
+                      <ArrowDown className="w-5 h-5" />
+                    </Button>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {aiRoast.ai_burn_score && aiRoast.ai_burn_score !== aiRoast.burn_score && (
+                      <span>
+                        AI: {aiRoast.ai_burn_score} → Community: {aiRoast.burn_score}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Burn Meter */}
               <div className="space-y-2">

@@ -10,7 +10,8 @@ import {
   Users, 
   Zap,
   Crown,
-  Medal
+  Medal,
+  Star
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { LoadingFire } from "@/components/LoadingFire";
@@ -44,187 +45,346 @@ export function Leaderboards() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
+    const loadLeaderboard = async () => {
+      if (!isMounted) return;
+      
+      setLoading(true);
+      try {
+        switch (category) {
+          case 'logs':
+            await loadLogsLeaders();
+            break;
+          case 'roasters':
+            await loadTopRoasters();
+            break;
+          case 'stacks':
+            await loadTopStacks();
+            break;
+          case 'burned':
+            await loadMostBurned();
+            break;
+          case 'trending':
+            await loadTrendingStacks();
+            break;
+        }
+      } catch (error: any) {
+        // Ignore AbortError (expected in React Strict Mode)
+        if (error?.name === 'AbortError' || error?.message?.includes('aborted')) {
+          return;
+        }
+        console.error('Error loading leaderboard:', error);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
     loadLeaderboard();
+
+    return () => {
+      isMounted = false;
+    };
   }, [category]);
 
-  const loadLeaderboard = async () => {
-    setLoading(true);
-    try {
-      switch (category) {
-        case 'logs':
-          await loadLogsLeaders();
-          break;
-        case 'roasters':
-          await loadTopRoasters();
-          break;
-        case 'stacks':
-          await loadTopStacks();
-          break;
-        case 'burned':
-          await loadMostBurned();
-          break;
-        case 'trending':
-          await loadTrendingStacks();
-          break;
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const loadLogsLeaders = async () => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id, username, avatar_url, karma_points')
-      .order('karma_points', { ascending: false })
-      .limit(10);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, username, avatar_url, karma_points')
+        .order('karma_points', { ascending: false })
+        .limit(10);
 
-    if (!error && data) {
-      setUsers(data);
-      setStacks([]);
+      // Ignore AbortError (expected in React Strict Mode)
+      if (error && (error.name === 'AbortError' || error.message?.includes('aborted'))) {
+        return;
+      }
+
+      if (error) {
+        console.error('Error loading logs leaders:', error);
+        if (error.message?.includes('permission') || error.message?.includes('policy')) {
+          console.error('❌ RLS Policy Error: Access denied to profiles table.');
+        }
+        setUsers([]);
+        setStacks([]);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        setUsers(data);
+        setStacks([]);
+      } else {
+        console.warn('⚠️  No profiles found for leaderboard');
+        setUsers([]);
+        setStacks([]);
+      }
+    } catch (error: any) {
+      // Ignore AbortError
+      if (error?.name === 'AbortError' || error?.message?.includes('aborted')) {
+        return;
+      }
+      console.error('Error in loadLogsLeaders:', error);
     }
   };
 
   const loadTopRoasters = async () => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select(`
-        id, 
-        username, 
-        avatar_url, 
-        karma_points
-      `)
-      .order('karma_points', { ascending: false })
-      .limit(10);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select(`
+          id, 
+          username, 
+          avatar_url, 
+          karma_points
+        `)
+        .order('karma_points', { ascending: false })
+        .limit(10);
 
-    if (!error && data) {
-      // Get roast counts for each user
-      const usersWithCounts = await Promise.all(
-        data.map(async (user) => {
-          const { count } = await supabase
-            .from('community_roasts')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', user.id);
+      // Ignore AbortError
+      if (error && (error.name === 'AbortError' || error.message?.includes('aborted'))) {
+        return;
+      }
 
-          return { ...user, roast_count: count || 0 };
-        })
-      );
+      if (error) {
+        console.error('Error loading top roasters:', error);
+        setUsers([]);
+        setStacks([]);
+        return;
+      }
 
-      setUsers(usersWithCounts.sort((a, b) => (b.roast_count || 0) - (a.roast_count || 0)));
-      setStacks([]);
+      if (data && data.length > 0) {
+        // OPTIMIZED: Get all roast counts in a single query instead of N queries
+        const userIds = data.map(u => u.id);
+        const { data: allRoasts, error: roastError } = await supabase
+          .from('community_roasts')
+          .select('user_id')
+          .in('user_id', userIds)
+          .not('user_id', 'is', null);
+
+        // Count roasts per user
+        const roastCountMap = new Map<string, number>();
+        if (allRoasts && !roastError) {
+          allRoasts.forEach((roast: any) => {
+            if (roast.user_id) {
+              roastCountMap.set(roast.user_id, (roastCountMap.get(roast.user_id) || 0) + 1);
+            }
+          });
+        }
+
+        // Combine with roast counts and sort
+        const usersWithCounts = data
+          .map((user) => ({
+            ...user,
+            roast_count: roastCountMap.get(user.id) || 0,
+          }))
+          .sort((a, b) => b.roast_count - a.roast_count);
+
+        setUsers(usersWithCounts);
+        setStacks([]);
+      } else {
+        setUsers([]);
+        setStacks([]);
+      }
+    } catch (error: any) {
+      // Ignore AbortError
+      if (error?.name === 'AbortError' || error?.message?.includes('aborted')) {
+        return;
+      }
+      console.error('Error in loadTopRoasters:', error);
     }
   };
 
   const loadTopStacks = async () => {
-    const { data: stacksData, error } = await supabase
-      .from('stacks')
-      .select('id, name, slug, view_count, upvote_count, profile_id')
-      .eq('is_public', true)
-      .order('upvote_count', { ascending: false })
-      .limit(10);
+    try {
+      // OPTIMIZED: Single query with joins instead of N+1 queries
+      const { data: stacksData, error } = await supabase
+        .from('stacks')
+        .select(`
+          id, name, slug, view_count, upvote_count, profile_id,
+          profiles:profile_id (username),
+          ai_roasts (burn_score)
+        `)
+        .eq('is_public', true)
+        .order('upvote_count', { ascending: false })
+        .limit(10);
 
-    if (!error && stacksData) {
-      const stacksWithDetails = await Promise.all(
-        stacksData.map(async (stack) => {
-          const { data: roast } = await supabase
-            .from('ai_roasts')
-            .select('burn_score')
-            .eq('stack_id', stack.id)
-            .maybeSingle();
+      // Ignore AbortError
+      if (error && (error.name === 'AbortError' || error.message?.includes('aborted'))) {
+        return;
+      }
 
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('username')
-            .eq('id', stack.profile_id)
-            .maybeSingle();
+      if (error) {
+        console.error('Error loading top stacks:', error);
+        if (error.message?.includes('column') || error.code === '42703') {
+          console.warn('⚠️  is_public column not found. Run migration 20250105_fix_stacks_schema.sql');
+        } else if (error.message?.includes('permission') || error.message?.includes('policy')) {
+          console.error('❌ RLS Policy Error: Access denied to stacks table.');
+        }
+        setStacks([]);
+        setUsers([]);
+        return;
+      }
 
+      if (stacksData && stacksData.length > 0) {
+        // Transform the joined data - NO additional queries needed!
+        const stacksWithDetails = stacksData.map((stack: any) => {
+          const aiRoast = Array.isArray(stack.ai_roasts) && stack.ai_roasts.length > 0
+            ? stack.ai_roasts[0]
+            : stack.ai_roasts;
+          const profile = Array.isArray(stack.profiles) ? stack.profiles[0] : stack.profiles;
+          
           return {
-            ...stack,
-            burn_score: roast?.burn_score || 0,
+            id: stack.id,
+            name: stack.name,
+            slug: stack.slug,
+            view_count: stack.view_count,
+            upvote_count: stack.upvote_count,
+            profile_id: stack.profile_id,
+            burn_score: aiRoast?.burn_score || 0,
             username: profile?.username || 'Anonymous'
           };
-        })
-      );
+        });
 
-      setStacks(stacksWithDetails);
-      setUsers([]);
+        setStacks(stacksWithDetails);
+        setUsers([]);
+      } else {
+        console.warn('⚠️  No public stacks found for leaderboard');
+        setStacks([]);
+        setUsers([]);
+      }
+    } catch (error: any) {
+      // Ignore AbortError
+      if (error?.name === 'AbortError' || error?.message?.includes('aborted')) {
+        return;
+      }
+      console.error('Error in loadTopStacks:', error);
     }
   };
 
   const loadMostBurned = async () => {
-    const { data: roasts, error } = await supabase
-      .from('ai_roasts')
-      .select('stack_id, burn_score')
-      .order('burn_score', { ascending: false })
-      .limit(10);
+    try {
+      // OPTIMIZED: Single query with joins from ai_roasts table
+      const { data: roastsData, error } = await supabase
+        .from('ai_roasts')
+        .select(`
+          burn_score,
+          stack:stacks!inner (
+            id, name, slug, view_count, upvote_count, profile_id,
+            profiles:profile_id (username)
+          )
+        `)
+        .order('burn_score', { ascending: false })
+        .limit(10);
 
-    if (!error && roasts) {
-      const stacksWithDetails = await Promise.all(
-        roasts.map(async (roast) => {
-          const { data: stack } = await supabase
-            .from('stacks')
-            .select('id, name, slug, view_count, upvote_count, profile_id')
-            .eq('id', roast.stack_id)
-            .single();
+      // Ignore AbortError
+      if (error && (error.name === 'AbortError' || error.message?.includes('aborted'))) {
+        return;
+      }
 
-          if (!stack) return null;
+      if (error) {
+        console.error('Error loading most burned:', error);
+        setStacks([]);
+        setUsers([]);
+        return;
+      }
 
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('username')
-            .eq('id', stack.profile_id)
-            .maybeSingle();
-
+      if (roastsData && roastsData.length > 0) {
+        // Transform the joined data - NO additional queries needed!
+        const stacksWithDetails = roastsData.map((item: any) => {
+          const stack = item.stack;
+          const profile = Array.isArray(stack?.profiles) ? stack.profiles[0] : stack?.profiles;
+          
           return {
-            ...stack,
-            burn_score: roast.burn_score,
+            id: stack?.id,
+            name: stack?.name,
+            slug: stack?.slug,
+            view_count: stack?.view_count || 0,
+            upvote_count: stack?.upvote_count || 0,
+            profile_id: stack?.profile_id,
+            burn_score: item.burn_score || 0,
             username: profile?.username || 'Anonymous'
           };
-        })
-      );
+        }).filter(Boolean);
 
-      setStacks(stacksWithDetails.filter(Boolean) as LeaderboardStack[]);
-      setUsers([]);
+        setStacks(stacksWithDetails as LeaderboardStack[]);
+        setUsers([]);
+      } else {
+        setStacks([]);
+        setUsers([]);
+      }
+    } catch (error: any) {
+      // Ignore AbortError
+      if (error?.name === 'AbortError' || error?.message?.includes('aborted')) {
+        return;
+      }
+      console.error('Error in loadMostBurned:', error);
     }
   };
 
   const loadTrendingStacks = async () => {
-    // Trending = recent stacks with good engagement (views + upvotes)
-    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    
-    const { data: stacksData, error } = await supabase
-      .from('stacks')
-      .select('id, name, slug, view_count, upvote_count, profile_id, created_at')
-      .eq('is_public', true)
-      .gte('created_at', oneDayAgo)
-      .order('view_count', { ascending: false })
-      .limit(10);
+    try {
+      // Trending = recent stacks with good engagement (views + upvotes)
+      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      
+      // OPTIMIZED: Single query with joins instead of N+1 queries
+      const { data: stacksData, error } = await supabase
+        .from('stacks')
+        .select(`
+          id, name, slug, view_count, upvote_count, profile_id, created_at,
+          profiles:profile_id (username),
+          ai_roasts (burn_score)
+        `)
+        .eq('is_public', true)
+        .gte('created_at', oneDayAgo)
+        .order('view_count', { ascending: false })
+        .limit(10);
 
-    if (!error && stacksData) {
-      const stacksWithDetails = await Promise.all(
-        stacksData.map(async (stack) => {
-          const { data: roast } = await supabase
-            .from('ai_roasts')
-            .select('burn_score')
-            .eq('stack_id', stack.id)
-            .maybeSingle();
+      // Ignore AbortError
+      if (error && (error.name === 'AbortError' || error.message?.includes('aborted'))) {
+        return;
+      }
 
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('username')
-            .eq('id', stack.profile_id)
-            .maybeSingle();
+      if (error) {
+        console.error('Error loading trending stacks:', error);
+        setStacks([]);
+        setUsers([]);
+        return;
+      }
 
+      if (stacksData && stacksData.length > 0) {
+        // Transform the joined data - NO additional queries needed!
+        const stacksWithDetails = stacksData.map((stack: any) => {
+          const aiRoast = Array.isArray(stack.ai_roasts) && stack.ai_roasts.length > 0
+            ? stack.ai_roasts[0]
+            : stack.ai_roasts;
+          const profile = Array.isArray(stack.profiles) ? stack.profiles[0] : stack.profiles;
+          
           return {
-            ...stack,
-            burn_score: roast?.burn_score || 0,
+            id: stack.id,
+            name: stack.name,
+            slug: stack.slug,
+            view_count: stack.view_count,
+            upvote_count: stack.upvote_count,
+            profile_id: stack.profile_id,
+            burn_score: aiRoast?.burn_score || 0,
             username: profile?.username || 'Anonymous'
           };
-        })
-      );
+        });
 
-      setStacks(stacksWithDetails);
-      setUsers([]);
+        setStacks(stacksWithDetails);
+        setUsers([]);
+      } else {
+        setStacks([]);
+        setUsers([]);
+      }
+    } catch (error: any) {
+      // Ignore AbortError
+      if (error?.name === 'AbortError' || error?.message?.includes('aborted')) {
+        return;
+      }
+      console.error('Error in loadTrendingStacks:', error);
     }
   };
 
@@ -238,7 +398,7 @@ export function Leaderboards() {
   const categoryIcons = {
     logs: <Trophy className="w-4 h-4" />,
     roasters: <Flame className="w-4 h-4" />,
-    stacks: <TrendingUp className="w-4 h-4" />,
+    stacks: <Star className="w-4 h-4" />,
     burned: <Zap className="w-4 h-4" />,
     trending: <TrendingUp className="w-4 h-4" />,
   };

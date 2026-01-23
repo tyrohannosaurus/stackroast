@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
+import { trackAffiliateClick } from "@/lib/analytics";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -75,11 +76,43 @@ export default function Stack() {
           return;
         }
         
-        // Fetch stack by slug first
-        // Note: ai_alternatives column may not exist if migration hasn't been run
+        // OPTIMIZED: Fetch stack with all relationships in one query
         let { data: stackData, error: stackError } = await supabase
           .from("stacks")
-          .select("*")
+          .select(`
+            id,
+            name,
+            slug,
+            created_at,
+            view_count,
+            profile_id,
+            upvote_count,
+            comment_count,
+            is_public,
+            ai_alternatives,
+            profiles:profile_id (
+              username
+            ),
+            ai_roasts (
+              roast_text,
+              burn_score,
+              persona
+            ),
+            stack_items (
+              id,
+              sort_order,
+              tool:tools (
+                id,
+                name,
+                slug,
+                logo_url,
+                category,
+                base_price,
+                affiliate_link,
+                website_url
+              )
+            )
+          `)
           .eq("slug", slug.trim())
           .maybeSingle();
         
@@ -92,7 +125,40 @@ export default function Stack() {
             console.log("Trying to find stack by ID instead of slug");
             const { data: stackById, error: errorById } = await supabase
               .from("stacks")
-              .select("*")
+              .select(`
+                id,
+                name,
+                slug,
+                created_at,
+                view_count,
+                profile_id,
+                upvote_count,
+                comment_count,
+                is_public,
+                ai_alternatives,
+                profiles:profile_id (
+                  username
+                ),
+                ai_roasts (
+                  roast_text,
+                  burn_score,
+                  persona
+                ),
+                stack_items (
+                  id,
+                  sort_order,
+                  tool:tools (
+                    id,
+                    name,
+                    slug,
+                    logo_url,
+                    category,
+                    base_price,
+                    affiliate_link,
+                    website_url
+                  )
+                )
+              `)
               .eq("id", slug.trim())
               .maybeSingle();
             
@@ -163,77 +229,43 @@ export default function Stack() {
 
         console.log("Stack found successfully:", stackData.name, "slug:", stackData.slug);
 
-        // Fetch stack items with tool details
-        const { data: itemsData, error: itemsError } = await supabase
-          .from("stack_items")
-          .select(`
-            id,
-            tool:tools (
-              id,
-              name,
-              slug,
-              logo_url,
-              category,
-              base_price,
-              affiliate_link,
-              website_url
-            )
-          `)
-          .eq("stack_id", stackData.id)
-          .order("sort_order");
-
-        if (itemsError) {
-          console.error("Items error:", itemsError);
-        }
-
-        setStack(stackData);
-        // Transform the nested tool structure to match StackItem interface
-        const transformedItems: StackItem[] = (itemsData || []).map((item: any) => ({
-          id: item.id,
-          tool: item.tool as StackItem['tool'],
-        }));
-        setItems(transformedItems);
-
-        // Fetch AI roast for sharing
-        const { data: roastData } = await supabase
-          .from("ai_roasts")
-          .select("roast_text, burn_score, persona")
-          .eq("stack_id", stackData.id)
-          .maybeSingle();
-        
-        if (roastData) {
-          setAiRoast(roastData);
-        }
-
-        // Fetch AI alternatives if they exist
-        // Note: ai_alternatives column may not exist if migration hasn't been run
-        // Try to fetch it separately to avoid breaking if column doesn't exist
-        try {
-          const { data: altData } = await supabase
-            .from("stacks")
-            .select("ai_alternatives")
-            .eq("id", stackData.id)
-            .maybeSingle();
+        // Extract data from the optimized query (already includes all relationships)
+        if (stackData) {
+          // Extract AI roast
+          const aiRoastData = stackData.ai_roasts;
+          const aiRoast = Array.isArray(aiRoastData) && aiRoastData.length > 0
+            ? aiRoastData[0]
+            : aiRoastData || null;
           
-          if (altData?.ai_alternatives) {
-            setAiAlternatives(altData.ai_alternatives as StackAlternativesResult);
+          if (aiRoast) {
+            setAiRoast(aiRoast);
           }
-        } catch (e) {
-          // Column doesn't exist yet, that's okay
-          console.log("ai_alternatives column not available yet (migration not run)");
-        }
 
-        // Fetch username if profile exists
-        if (stackData.profile_id) {
-          const { data: profileData } = await supabase
-            .from("profiles")
-            .select("username")
-            .eq("id", stackData.profile_id)
-            .maybeSingle();
-          
-          if (profileData?.username) {
-            setUsername(profileData.username);
+          // Extract AI alternatives (may not exist)
+          if (stackData.ai_alternatives) {
+            setAiAlternatives(stackData.ai_alternatives as StackAlternativesResult);
           }
+
+          // Extract username from profile join
+          const profileData = stackData.profiles;
+          if (profileData) {
+            const username = Array.isArray(profileData) ? profileData[0]?.username : profileData?.username;
+            if (username) {
+              setUsername(username);
+            }
+          }
+
+          // Extract and transform stack items
+          const itemsData = stackData.stack_items || [];
+          const transformedItems: StackItem[] = itemsData.map((item: any) => ({
+            id: item.id,
+            tool: item.tool as StackItem['tool'],
+          }));
+          setItems(transformedItems);
+
+          // Set stack data (without nested relationships for display)
+          const { ai_roasts, profiles, stack_items, ...stackDisplayData } = stackData;
+          setStack(stackDisplayData as any);
         }
 
         // Increment view count
@@ -420,12 +452,14 @@ export default function Stack() {
                       variant="ghost"
                       className="text-orange-400 hover:text-orange-500 hover:bg-orange-500/10 flex-shrink-0"
                       onClick={() => {
-                        supabase.from("affiliate_clicks").insert({
-                          tool_id: item.tool.id,
-                          stack_id: stack.id,
+                        trackAffiliateClick({
+                          toolId: item.tool.id,
+                          toolName: item.tool.name,
+                          affiliateUrl: item.tool.affiliate_link || null,
+                          stackId: stack.id,
                           source: "stack_page",
                         });
-                        window.open(item.tool.affiliate_link || item.tool.website_url, '_blank');
+                        window.open(item.tool.affiliate_link || item.tool.website_url, "_blank");
                       }}
                     >
                       <ExternalLink className="w-4 h-4" />

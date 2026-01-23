@@ -4,8 +4,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
-import { GlobalSearch } from "@/components/GlobalSearch";
 import { Navbar } from "@/components/Navbar";
+import { GlobalSearch } from "@/components/GlobalSearch";
+import { CommandPalette } from "@/components/CommandPalette";
 import Index from "./pages/Index";
 import Stack from "./pages/Stack";
 import Dashboard from "./pages/Dashboard";
@@ -27,6 +28,7 @@ function App() {
           <BrowserRouter>
             <Navbar onSearchOpen={() => setSearchOpen(true)} />
             <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
+            <CommandPalette onOpenSearch={() => setSearchOpen(true)} />
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/user/:username" element={<UserProfile />} />

@@ -205,7 +205,7 @@ export function GlobalSearch({ open: controlledOpen, onOpenChange }: GlobalSearc
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="max-w-2xl p-0 gap-0 overflow-hidden">
+      <DialogContent className="max-w-2xl p-0 gap-0 overflow-hidden" hideCloseButton>
         {/* Search Input */}
         <div className="flex items-center border-b border-border px-4 py-3">
           <Search className="w-5 h-5 text-muted-foreground mr-3" />

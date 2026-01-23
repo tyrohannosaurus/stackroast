@@ -18,6 +18,20 @@ interface AuthDialogProps {
 
 export function AuthDialog({ open, onOpenChange, onSuccess, defaultMode = "signup" }: AuthDialogProps) {
   const { signInWithGoogle, signInWithGitHub } = useAuth();
+  
+  // Force auth state refresh by triggering a session check
+  const refreshAuthState = async () => {
+    // Get fresh session
+    const { data: { session } } = await supabase.auth.getSession();
+    console.log("Refreshing auth state, session:", session?.user?.id);
+    if (session) {
+      // Small delay to let Supabase update, then trigger a custom event
+      setTimeout(() => {
+        console.log("Dispatching auth-state-changed event");
+        window.dispatchEvent(new Event('auth-state-changed'));
+      }, 500);
+    }
+  };
   const [isSignUp, setIsSignUp] = useState(defaultMode === "signup");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -71,6 +85,26 @@ export function AuthDialog({ open, onOpenChange, onSuccess, defaultMode = "signu
         if (signUpError) throw signUpError;
         if (!signUpData.user) throw new Error("No user returned from signup");
 
+        // Create profile immediately after signup
+        try {
+          const { error: profileError } = await supabase
+            .from("profiles")
+            .insert({
+              id: signUpData.user.id,
+              username: username,
+              karma_points: 0,
+              avatar_url: null,
+            });
+
+          if (profileError && !profileError.message.includes('duplicate')) {
+            console.error("Error creating profile:", profileError);
+            // Don't throw - profile might already exist or be created by trigger
+          }
+        } catch (profileErr) {
+          console.error("Profile creation error:", profileErr);
+          // Continue anyway - profile might be created by database trigger
+        }
+
         toast.success(`Welcome ${username}! 🎉`, {
           description: "You're now signed in and ready to submit your stack.",
         });
@@ -81,6 +115,9 @@ export function AuthDialog({ open, onOpenChange, onSuccess, defaultMode = "signu
         setLoading(false);
         onOpenChange(false);
 
+        // Refresh auth state to update UI
+        await refreshAuthState();
+        
         if (onSuccess) {
           setTimeout(() => {
             onSuccess();
@@ -106,6 +143,9 @@ export function AuthDialog({ open, onOpenChange, onSuccess, defaultMode = "signu
         setLoading(false);
         onOpenChange(false);
 
+        // Refresh auth state to update UI
+        await refreshAuthState();
+        
         if (onSuccess) {
           setTimeout(() => {
             onSuccess();

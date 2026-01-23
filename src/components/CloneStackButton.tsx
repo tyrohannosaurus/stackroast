@@ -9,6 +9,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { trackAffiliateClick } from "@/lib/analytics";
 
 interface Tool {
   id: string;
@@ -34,6 +36,7 @@ export default function CloneStackButton({
 }: CloneStackButtonProps) {
   const [showDialog, setShowDialog] = useState(false);
   const [isCloning, setIsCloning] = useState(false);
+  const { user } = useAuth();
 
   const toolsWithAffiliateLinks = tools.filter((tool) => tool.affiliate_url);
 
@@ -43,6 +46,13 @@ export default function CloneStackButton({
     // Open affiliate links with a small delay to avoid popup blockers
     toolsWithAffiliateLinks.forEach((tool, index) => {
       setTimeout(() => {
+        trackAffiliateClick({
+          toolId: tool.id,
+          toolName: tool.name,
+          affiliateUrl: tool.affiliate_url || null,
+          source: "stack_clone",
+          userId: user?.id || null,
+        });
         window.open(tool.affiliate_url, "_blank", "noopener,noreferrer");
       }, index * 300); // 300ms delay between each link
     });
