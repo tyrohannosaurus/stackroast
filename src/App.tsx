@@ -15,6 +15,7 @@ import UserProfile from "@/pages/UserProfile";
 import RoastMe from "./pages/RoastMe";
 import StackKits from "./pages/StackKits";
 import SavedStacks from "./pages/SavedStacks";
+import Terms from "./pages/Terms";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,7 @@ function App() {
               <Route path="/roast-me/:code" element={<RoastMe />} />
               <Route path="/kits" element={<StackKits />} />
               <Route path="/saved" element={<SavedStacks />} />
+              <Route path="/terms" element={<Terms />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             <Toaster />

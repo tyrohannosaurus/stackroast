@@ -284,17 +284,7 @@ export function StackKitDetailDialog({ kit, open, onOpenChange }: StackKitDetail
 
           <Separator />
 
-          {/* Commission Info */}
-          {kit.totalCommission && kit.totalCommission > 0 && (
-            <Card className="p-3 bg-green-500/10 border-green-500/30">
-              <div className="flex items-center gap-2 text-sm">
-                <Sparkles className="w-4 h-4 text-green-400" />
-                <span className="text-green-400 font-medium">
-                  Potential commission: ${kit.totalCommission} if all tools are signed up
-                </span>
-              </div>
-            </Card>
-          )}
+      
 
           {/* Actions */}
           <div className="flex items-center gap-3">

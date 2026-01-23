@@ -109,12 +109,22 @@ export function Footer() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="mt-12 pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} StackRoast. All rights reserved.
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Built with 🔥 by developers, for developers
+        <div className="mt-12 pt-8 border-t border-white/10">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
+            <p className="text-sm text-muted-foreground">
+              © {new Date().getFullYear()} StackRoast. All rights reserved.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Built with 🔥 by developers, for developers
+            </p>
+          </div>
+          
+          {/* Affiliate Disclosure */}
+          <p className="text-xs text-muted-foreground/80 text-center mt-4">
+            We may earn affiliate commissions from tool signups.{' '}
+            <Link to="/terms#affiliate" className="underline hover:text-foreground transition-colors">
+              Learn more
+            </Link>
           </p>
         </div>
       </div>
