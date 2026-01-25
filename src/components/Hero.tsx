@@ -23,14 +23,6 @@ export function Hero() {
 
   return (
     <div className="space-y-8">
-      {/* Badge */}
-      <div className="flex justify-center">
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-500/10 border border-orange-500/20">
-          <Flame className="w-4 h-4 text-orange-400" />
-          <span className="text-sm text-orange-300">Over 10,000 stacks roasted</span>
-        </div>
-      </div>
-
       {/* Main Heading with Animation */}
       <h1 className="text-6xl md:text-7xl font-bold text-center leading-tight">
         Roast my{" "}
@@ -120,22 +112,6 @@ export function Hero() {
             View Recent Roasts
             <span className="ml-1">→</span>
           </Button>
-        </div>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-8 max-w-2xl mx-auto pt-8">
-        <div className="text-center">
-          <div className="text-3xl font-bold text-foreground">10K+</div>
-          <div className="text-sm text-muted-foreground">Stacks Roasted</div>
-        </div>
-        <div className="text-center">
-          <div className="text-3xl font-bold text-foreground">98%</div>
-          <div className="text-sm text-muted-foreground">Burn Rate</div>
-        </div>
-        <div className="text-center">
-          <div className="text-3xl font-bold text-foreground">4.2M</div>
-          <div className="text-sm text-muted-foreground">Laughs Generated</div>
         </div>
       </div>
 

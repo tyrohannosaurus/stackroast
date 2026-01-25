@@ -152,15 +152,21 @@ export function RoastFeed() {
         }
         
         console.log(`✅ Loaded ${stacksData.length} stacks from database (optimized query)`);
-        
+
         // DEBUG: Log first stack to see structure
         if (stacksData[0]) {
           console.log('🔍 First stack raw data:', stacksData[0]);
           console.log('🔍 First stack ai_roasts:', stacksData[0].ai_roasts);
         }
 
-        // Transform the data - NO additional queries needed!
-        const enrichedStacks = stacksData.map((stack: any) => {
+        // OPTIMIZED: Single iteration combining enrichment, tool map building, and transformation
+        // Reduces O(3n) to O(n) by processing all three operations in one pass
+        const toolMap = new Map<string, string[]>();
+        const transformedStacks: Stack[] = [];
+
+        for (let i = 0; i < stacksData.length; i++) {
+          const stack = stacksData[i];
+
           // Extract profile data (already loaded via relationship)
           const profile = stack.profiles ? {
             username: stack.profiles.username,
@@ -172,7 +178,7 @@ export function RoastFeed() {
           if (stack.ai_roasts) {
             if (Array.isArray(stack.ai_roasts)) {
               // Multiple roasts - take the first one that has roast_text
-              aiRoast = stack.ai_roasts.find((r: any) => r?.roast_text?.trim()) || 
+              aiRoast = stack.ai_roasts.find((r: any) => r?.roast_text?.trim()) ||
                        (stack.ai_roasts.length > 0 ? stack.ai_roasts[0] : null);
             } else {
               // Single roast object
@@ -180,12 +186,6 @@ export function RoastFeed() {
             }
           }
 
-          // Community roast data will be fetched separately if needed (optimization)
-          // For now, set defaults - we can add a separate lightweight query if needed
-          const totalCommunityVotes = 0;
-          const topCommunityRoast = null;
-          const communityRoastsArray: any[] = [];
-          
           // Debug: Log if roast exists but has no text (only in development)
           if (import.meta.env.DEV && aiRoast && (!aiRoast.roast_text || aiRoast.roast_text.trim() === '')) {
             console.warn(`⚠️ Stack ${stack.id} (${stack.name}) has ai_roasts object but no roast_text:`, {
@@ -229,9 +229,9 @@ export function RoastFeed() {
             tools_full,
             comment_count: stack.comment_count || 0,
           };
-          
+
           // DEBUG: Log enriched stack (only in development)
-          if (import.meta.env.DEV && stack.id === stacksData[0]?.id) {
+          if (import.meta.env.DEV && i === 0) {
             console.log('🔍 First enriched stack:', {
               id: enriched.id,
               name: enriched.name,
@@ -242,29 +242,24 @@ export function RoastFeed() {
               ai_roasts_burn_score: enriched.ai_roasts?.burn_score
             });
           }
-          
-          return enriched;
-        });
 
-        // Build tool map for filtering
-        const toolMap = new Map<string, string[]>();
-        enrichedStacks.forEach(stack => {
-          toolMap.set(stack.id, stack.tool_ids || []);
-        });
-        
+          // Build tool map (previously separate iteration)
+          toolMap.set(enriched.id, enriched.tool_ids || []);
+
+          // Transform to Stack type (previously separate iteration)
+          const transformed = transformLegacyStack(enriched);
+          transformedStacks.push(transformed);
+
+          // DEBUG: Log first transformed stack
+          if (import.meta.env.DEV && i === 0) {
+            console.log('🔍 First transformed stack:', transformed);
+            console.log('🔍 Has ai_roast_full?', !!transformed.ai_roast_full);
+          }
+        }
+
         // Only update state if component is still mounted
         if (isMounted) {
           setStackToolMap(toolMap);
-
-          // Transform legacy stacks to new Stack type
-          const transformedStacks = enrichedStacks.map(transformLegacyStack);
-          
-          // DEBUG: Log first transformed stack
-          if (transformedStacks[0]) {
-            console.log('🔍 First transformed stack:', transformedStacks[0]);
-            console.log('🔍 Has ai_roast_full?', !!transformedStacks[0].ai_roast_full);
-          }
-          
           setStacks(transformedStacks);
         }
       } catch (error: any) {

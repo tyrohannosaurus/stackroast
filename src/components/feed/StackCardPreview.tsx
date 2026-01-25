@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, TrendingUp } from 'lucide-react';
@@ -14,7 +14,7 @@ interface StackCardPreviewProps {
   stack: Stack;
 }
 
-export function StackCardPreview({ stack }: StackCardPreviewProps) {
+function StackCardPreviewComponent({ stack }: StackCardPreviewProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [upvoteCount, setUpvoteCount] = useState(stack.upvote_count);
@@ -167,3 +167,5 @@ export function StackCardPreview({ stack }: StackCardPreviewProps) {
     </Card>
   );
 }
+
+export const StackCardPreview = memo(StackCardPreviewComponent);

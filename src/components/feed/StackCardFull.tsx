@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MessageSquare, TrendingUp, Flame, Sparkles } from 'lucide-react';
@@ -15,7 +15,7 @@ interface StackCardFullProps {
   rank: number;
 }
 
-export function StackCardFull({ stack, rank }: StackCardFullProps) {
+function StackCardFullComponent({ stack, rank }: StackCardFullProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [upvoteCount, setUpvoteCount] = useState(stack.upvote_count);
@@ -194,3 +194,5 @@ export function StackCardFull({ stack, rank }: StackCardFullProps) {
     </Card>
   );
 }
+
+export const StackCardFull = memo(StackCardFullComponent);

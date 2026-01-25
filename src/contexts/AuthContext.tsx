@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useRef, useMemo, useCallback } from "react";
+import { createContext, useContext, useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { sendWelcomeEmail } from "@/lib/emailService";
 import type { User } from "@supabase/supabase-js";
@@ -307,27 +307,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setProfile(null);
   };
 
-  const refreshProfile = useCallback(async () => {
+  const refreshProfile = async () => {
     if (user) {
       console.log('🔄 Refreshing profile after karma update...');
       await loadProfile(user.id);
     }
-  }, [user]);
-
-  // Memoize the context value to prevent unnecessary re-renders
-  const contextValue = useMemo(() => ({
-    user,
-    profile,
-    loading,
-    signInWithGoogle,
-    signInWithGitHub,
-    signInWithTwitter,
-    signOut,
-    refreshProfile
-  }), [user, profile, loading, refreshProfile]);
+  };
 
   return (
-    <AuthContext.Provider value={contextValue}>
+    <AuthContext.Provider value={{ 
+      user, 
+      profile, 
+      loading, 
+      signInWithGoogle,
+      signInWithGitHub,
+      signInWithTwitter,
+      signOut,
+      refreshProfile
+    }}>
       {children}
     </AuthContext.Provider>
   );
