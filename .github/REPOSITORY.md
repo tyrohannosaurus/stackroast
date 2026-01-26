@@ -6,23 +6,36 @@
 
 ## Repository Structure
 
-### `/src` - Source Code
-- **`components/`** - Reusable React components (UI, forms, dialogs, etc.)
-- **`pages/`** - Page-level components (Home, Stack detail, Dashboard, etc.)
-- **`lib/`** - Utility functions and helpers (validation, API clients, etc.)
-- **`types/`** - TypeScript type definitions and interfaces
-- **`contexts/`** - React context providers (Auth, Theme)
-- **`data/`** - Static data files (hardcoded stack kits)
+### Root Directories
 
-### `/supabase` - Backend & Database
-- **`migrations/`** - Database schema migrations (versioned by date)
-- **`functions/`** - Supabase Edge Functions (serverless functions)
+#### `.github/`
+GitHub configuration files, repository documentation, and project metadata.
 
-### `/public` - Static Assets
-- Images, logos, and other static files served directly
+#### `public/`
+Static assets served directly by the web server - images, logos, favicons, and other public files.
 
-### `/scripts` - Utility Scripts
-- Node.js scripts for setup and maintenance tasks
+#### `scripts/`
+Utility scripts for database setup, system user configuration, and maintenance tasks.
+
+#### `src/`
+Main application source code containing React components, pages, utilities, type definitions, and application logic.
+
+#### `supabase/`
+Backend infrastructure including database migrations and Supabase Edge Functions for serverless operations.
+
+### Source Code Structure (`src/`)
+
+- **`components/`** - Reusable React components (UI, forms, dialogs, cards, etc.)
+- **`pages/`** - Page-level components (Home, Stack detail, Dashboard, User profiles, etc.)
+- **`lib/`** - Utility functions and helpers (validation, API clients, UUID generation, etc.)
+- **`types/`** - TypeScript type definitions and database interfaces
+- **`contexts/`** - React context providers (Authentication, Theme management)
+- **`data/`** - Static data files (hardcoded stack kits and featured content)
+
+### Backend Structure (`supabase/`)
+
+- **`migrations/`** - Database schema migrations (versioned by date, idempotent)
+- **`functions/`** - Supabase Edge Functions (logo fetching, email sending, reminders)
 
 ## Key Technologies
 
