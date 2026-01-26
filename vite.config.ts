@@ -32,4 +32,4 @@ export default defineConfig({
     },
     chunkSizeWarningLimit: 1000, // Increased from default 500kb
   },
-}));
+});
