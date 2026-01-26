@@ -1,30 +1,36 @@
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { DollarSign, Wrench, ChevronRight, Star } from 'lucide-react';
-import { type StackKit, DIFFICULTY_INFO, CATEGORY_INFO } from '@/data/stackKits';
+import { Wrench, ChevronRight, Star, TrendingUp, Eye, MessageSquare } from 'lucide-react';
+import type { StackKitWithStats, StackKitDifficulty } from '@/types/database';
 
 interface StackKitCardProps {
-  kit: StackKit;
+  kit: StackKitWithStats;
   onClick: () => void;
   featured?: boolean;
   compact?: boolean;
 }
 
+const DIFFICULTY_COLORS: Record<StackKitDifficulty, string> = {
+  'Beginner': 'border-green-500/50 text-green-500',
+  'Intermediate': 'border-blue-500/50 text-blue-500',
+  'Advanced': 'border-purple-500/50 text-purple-500',
+  'Expert': 'border-red-500/50 text-red-500',
+};
+
 export function StackKitCard({ kit, onClick, featured, compact }: StackKitCardProps) {
-  const difficultyInfo = DIFFICULTY_INFO[kit.difficulty];
-  const categoryInfo = CATEGORY_INFO[kit.category];
+  const difficultyColor = kit.difficulty ? DIFFICULTY_COLORS[kit.difficulty] : '';
 
   if (compact) {
     return (
-      <Card 
+      <Card
         className="p-4 hover:border-orange-500/50 cursor-pointer transition-all group"
         onClick={onClick}
       >
         <div className="flex items-center gap-4">
           {/* Icon */}
           <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center text-2xl shrink-0">
-            {kit.icon}
+            {kit.icon || '📦'}
           </div>
 
           {/* Content */}
@@ -40,14 +46,11 @@ export function StackKitCard({ kit, onClick, featured, compact }: StackKitCardPr
           <div className="flex items-center gap-4 shrink-0">
             <div className="text-sm text-muted-foreground">
               <Wrench className="w-4 h-4 inline mr-1" />
-              {kit.tools.length}
+              {kit.tool_count}
             </div>
-            <div className="text-sm">
-              {kit.totalMonthlyCost === 0 ? (
-                <span className="text-green-500 font-medium">Free</span>
-              ) : (
-                <span className="text-muted-foreground">${kit.totalMonthlyCost}/mo</span>
-              )}
+            <div className="text-sm text-muted-foreground">
+              <TrendingUp className="w-4 h-4 inline mr-1" />
+              {kit.upvote_count}
             </div>
             <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-orange-500 transition-colors" />
           </div>
@@ -57,7 +60,7 @@ export function StackKitCard({ kit, onClick, featured, compact }: StackKitCardPr
   }
 
   return (
-    <Card 
+    <Card
       className={`overflow-hidden hover:border-orange-500/50 cursor-pointer transition-all group ${
         featured ? 'ring-2 ring-orange-500/30' : ''
       }`}
@@ -67,7 +70,7 @@ export function StackKitCard({ kit, onClick, featured, compact }: StackKitCardPr
       <div className="p-6 pb-4">
         <div className="flex items-start justify-between mb-3">
           <div className="w-14 h-14 rounded-xl bg-muted flex items-center justify-center text-3xl">
-            {kit.icon}
+            {kit.icon || '📦'}
           </div>
           <div className="flex items-center gap-2">
             {featured && (
@@ -76,9 +79,11 @@ export function StackKitCard({ kit, onClick, featured, compact }: StackKitCardPr
                 Featured
               </Badge>
             )}
-            <Badge variant="outline" className={difficultyInfo.color}>
-              {difficultyInfo.label}
-            </Badge>
+            {kit.difficulty && (
+              <Badge variant="outline" className={difficultyColor}>
+                {kit.difficulty}
+              </Badge>
+            )}
           </div>
         </div>
 
@@ -90,53 +95,56 @@ export function StackKitCard({ kit, onClick, featured, compact }: StackKitCardPr
         </p>
       </div>
 
-      {/* Tools Preview */}
-      <div className="px-6 pb-4">
-        <div className="flex flex-wrap gap-1.5">
-          {kit.tools.slice(0, 5).map((tool, i) => (
-            <Badge key={i} variant="secondary" className="text-xs">
-              {tool.name}
-            </Badge>
-          ))}
-          {kit.tools.length > 5 && (
-            <Badge variant="secondary" className="text-xs bg-orange-500/10 text-orange-400">
-              +{kit.tools.length - 5} more
-            </Badge>
-          )}
+      {/* Tags Preview */}
+      {kit.tags && kit.tags.length > 0 && (
+        <div className="px-6 pb-4">
+          <div className="flex flex-wrap gap-1.5">
+            {kit.tags.slice(0, 3).map((tag, i) => (
+              <Badge key={i} variant="secondary" className="text-xs">
+                {tag}
+              </Badge>
+            ))}
+            {kit.tags.length > 3 && (
+              <Badge variant="secondary" className="text-xs bg-orange-500/10 text-orange-400">
+                +{kit.tags.length - 3} more
+              </Badge>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Highlights */}
+      {/* Author */}
       <div className="px-6 pb-4">
-        <ul className="space-y-1">
-          {kit.highlights.slice(0, 2).map((highlight, i) => (
-            <li key={i} className="text-xs text-muted-foreground flex items-center gap-2">
-              <span className="w-1 h-1 rounded-full bg-orange-500" />
-              {highlight}
-            </li>
-          ))}
-        </ul>
+        <div className="flex items-center gap-2">
+          <div className="text-xs text-muted-foreground">
+            by <span className="text-foreground font-medium">{kit.creator_username}</span>
+          </div>
+        </div>
       </div>
 
       {/* Footer */}
       <div className="px-6 py-4 border-t border-border bg-muted/30 flex items-center justify-between">
         <div className="flex items-center gap-4 text-sm">
-          <div className="flex items-center gap-1 text-muted-foreground">
+          <div className="flex items-center gap-1 text-muted-foreground" title="Tools">
             <Wrench className="w-4 h-4" />
-            <span>{kit.tools.length} tools</span>
+            <span>{kit.tool_count}</span>
           </div>
-          <div className="flex items-center gap-1">
-            <DollarSign className="w-4 h-4" />
-            {kit.totalMonthlyCost === 0 ? (
-              <span className="text-green-500 font-medium">Free</span>
-            ) : (
-              <span className="text-muted-foreground">${kit.totalMonthlyCost}/mo</span>
-            )}
+          <div className="flex items-center gap-1 text-muted-foreground" title="Upvotes">
+            <TrendingUp className="w-4 h-4" />
+            <span>{kit.upvote_count}</span>
+          </div>
+          <div className="flex items-center gap-1 text-muted-foreground" title="Views">
+            <Eye className="w-4 h-4" />
+            <span>{kit.view_count}</span>
+          </div>
+          <div className="flex items-center gap-1 text-muted-foreground" title="Comments">
+            <MessageSquare className="w-4 h-4" />
+            <span>{kit.comment_count}</span>
           </div>
         </div>
-        <Button 
-          variant="ghost" 
-          size="sm" 
+        <Button
+          variant="ghost"
+          size="sm"
           className="text-orange-400 hover:text-orange-300 hover:bg-orange-500/10"
         >
           View Kit

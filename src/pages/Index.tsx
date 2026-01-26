@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Hero } from "@/components/Hero";
 import { RoastFeed } from "@/components/RoastFeed";
@@ -12,10 +12,13 @@ import { VisualRoastDialog } from "@/components/VisualRoastDialog";
 import { RoastFriendDialog } from "@/components/RoastFriendDialog";
 import { FeaturedStacks } from "@/components/FeaturedStacks";
 import { StackKitCard } from "@/components/StackKitCard";
-import { getFeaturedKits, enhanceKitsWithCommissions } from "@/data/stackKits";
+import { getFeaturedKitsWithStats } from "@/data/stackKits";
+import { supabase } from "@/lib/supabase";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sparkles, ArrowRight } from "lucide-react";
+import type { StackKitWithStats } from "@/types/database";
+import { stringToUUID } from "@/lib/uuid";
 
 export default function Index() {
   const navigate = useNavigate();
@@ -24,6 +27,50 @@ export default function Index() {
   const [repoDialogOpen, setRepoDialogOpen] = useState(false);
   const [visualRoastOpen, setVisualRoastOpen] = useState(false);
   const [roastFriendOpen, setRoastFriendOpen] = useState(false);
+  const [featuredKits, setFeaturedKits] = useState<StackKitWithStats[]>([]);
+
+  // Load featured kits with real stats from database
+  useEffect(() => {
+    async function loadFeaturedKits() {
+      const hardcodedKits = getFeaturedKitsWithStats().slice(0, 3);
+      
+      // Generate UUIDs for hardcoded kits (same as in StackKitDetailDialog)
+      const kitUUIDs = hardcodedKits.map(kit => stringToUUID(`hardcoded-kit-${kit.slug}`));
+      
+      // Fetch kits from database by ID (using generated UUIDs)
+      const { data: dbKits } = await supabase
+        .from('stack_kits')
+        .select('id, slug, upvote_count, comment_count, view_count, clone_count')
+        .in('id', kitUUIDs);
+
+      // Create a map of slug -> database stats
+      const dbStatsMap = new Map(
+        (dbKits || []).map(kit => [kit.slug, kit])
+      );
+
+      // Merge hardcoded kits with database stats
+      const enrichedKits = hardcodedKits.map(kit => {
+        const dbStats = dbStatsMap.get(kit.slug);
+        if (dbStats) {
+          // Kit exists in database, use real stats and database ID
+          return {
+            ...kit,
+            id: dbStats.id, // Use database ID (UUID)
+            upvote_count: dbStats.upvote_count,
+            comment_count: dbStats.comment_count,
+            view_count: dbStats.view_count,
+            clone_count: dbStats.clone_count,
+          };
+        }
+        // Kit doesn't exist in database yet, use default stats
+        return kit;
+      });
+
+      setFeaturedKits(enrichedKits);
+    }
+
+    loadFeaturedKits();
+  }, []);
 
   return (
     <div className="min-h-screen bg-canvas">
@@ -65,7 +112,7 @@ export default function Index() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {enhanceKitsWithCommissions(getFeaturedKits()).slice(0, 3).map((kit) => (
+            {featuredKits.map((kit) => (
               <StackKitCard
                 key={kit.id}
                 kit={kit}

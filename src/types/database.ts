@@ -120,16 +120,130 @@ export interface SavedStack {
   created_at: string;
 }
 
+// User-Submitted Stack Kits (comprehensive types matching new schema)
 export interface StackKit {
   id: string;
+  creator_id: string;
   name: string;
-  description?: string;
+  slug: string;
+  tagline: string;
+  description: string;
   icon?: string;
-  color?: string;
-  display_order?: number;
+  category: StackKitCategory;
+  tags: string[];
+  difficulty?: StackKitDifficulty;
+  total_monthly_cost_min?: number;
+  total_monthly_cost_max?: number;
+  upvote_count: number;
+  comment_count: number;
+  view_count: number;
+  clone_count: number;
+  published: boolean;
+  featured: boolean;
+  flagged: boolean;
+  flag_reason?: string;
+  reviewed_at?: string;
+  reviewed_by?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export type StackKitCategory =
+  | 'Full Stack Development'
+  | 'Frontend Development'
+  | 'Backend Development'
+  | 'Mobile Development'
+  | 'DevOps & Infrastructure'
+  | 'Data & Analytics'
+  | 'AI & Machine Learning'
+  | 'Design & Prototyping'
+  | 'Testing & QA'
+  | 'Security & Monitoring'
+  | 'Content & Marketing'
+  | 'Productivity & Collaboration'
+  | 'Other';
+
+export type StackKitDifficulty = 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert';
+
+export interface KitTool {
+  id: string;
+  kit_id: string;
+  tool_id: string;
+  reason_text: string;
+  sort_order: number;
   created_at: string;
 }
 
+export interface KitUpvote {
+  id: string;
+  kit_id: string;
+  user_id: string;
+  created_at: string;
+}
+
+export interface KitComment {
+  id: string;
+  kit_id: string;
+  user_id: string;
+  comment_text: string;
+  upvote_count: number;
+  flagged: boolean;
+  created_at: string;
+  updated_at?: string;
+}
+
+// Join types for Stack Kits with related data
+export interface StackKitWithCreator extends StackKit {
+  creator?: Profile;
+  creator_username?: string;
+  creator_avatar_url?: string;
+}
+
+export interface StackKitWithTools extends StackKitWithCreator {
+  tools?: ToolInKit[];
+  tool_count?: number;
+}
+
+export interface ToolInKit extends Tool {
+  reason_text: string;
+  sort_order: number;
+}
+
+export interface KitCommentWithProfile extends KitComment {
+  profiles: {
+    username: string;
+    avatar_url?: string;
+  };
+}
+
+// View type for kits with pre-aggregated stats
+export interface StackKitWithStats {
+  id: string;
+  creator_id: string;
+  name: string;
+  slug: string;
+  tagline: string;
+  description: string;
+  icon?: string;
+  category: StackKitCategory;
+  tags: string[];
+  difficulty?: StackKitDifficulty;
+  total_monthly_cost_min?: number;
+  total_monthly_cost_max?: number;
+  upvote_count: number;
+  comment_count: number;
+  view_count: number;
+  clone_count: number;
+  published: boolean;
+  featured: boolean;
+  created_at: string;
+  updated_at?: string;
+  creator_username: string;
+  creator_avatar_url?: string;
+  tool_count: number;
+}
+
+// Legacy types (kept for backward compatibility, deprecated)
 export interface StackKitTool {
   id: string;
   kit_id: string;
@@ -252,12 +366,52 @@ export interface UpdateProfileInput {
   avatarUrl?: string;
 }
 
+export interface CreateKitInput {
+  name: string;
+  slug?: string;
+  tagline: string;
+  description: string;
+  icon?: string;
+  category: StackKitCategory;
+  tags: string[];
+  difficulty?: StackKitDifficulty;
+  tools: CreateKitToolInput[];
+  published: boolean;
+}
+
+export interface CreateKitToolInput {
+  tool_id: string;
+  reason_text: string;
+  sort_order: number;
+}
+
+export interface UpdateKitInput {
+  name?: string;
+  tagline?: string;
+  description?: string;
+  icon?: string;
+  category?: StackKitCategory;
+  tags?: string[];
+  difficulty?: StackKitDifficulty;
+  published?: boolean;
+}
+
+export interface CreateKitCommentInput {
+  kitId: string;
+  comment_text: string;
+}
+
+export interface CreateKitUpvoteInput {
+  kitId: string;
+}
+
 // =====================================================
 // UTILITY TYPES
 // =====================================================
 
 export type SortOrder = "asc" | "desc";
 export type RoastSortBy = "newest" | "oldest" | "top" | "controversial";
+export type KitSortBy = "newest" | "popular" | "views";
 
 export interface SortConfig {
   field: string;
@@ -268,6 +422,14 @@ export interface FilterConfig {
   category?: string;
   isPublic?: boolean;
   userId?: string;
+}
+
+export interface KitFilterConfig {
+  category?: StackKitCategory;
+  tags?: string[];
+  difficulty?: StackKitDifficulty;
+  featured?: boolean;
+  searchQuery?: string;
 }
 
 // =====================================================

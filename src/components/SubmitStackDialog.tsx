@@ -4,11 +4,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Flame, Search, X } from "lucide-react";
+import { Flame, Search, X, Plus } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { AuthDialog } from "@/components/AuthDialog";
+import { AddToolDialog } from "@/components/AddToolDialog";
 import { generateRoast } from '@/lib/generateRoast';
 import { PersonaSelector } from "@/components/PersonaSelector";
 import { getRandomPersona, type PersonaKey } from "@/lib/roastPersonas";
@@ -41,6 +42,7 @@ export function SubmitStackDialog({ open, onOpenChange }: SubmitStackDialogProps
     tools: Tool[];
   } | null>(null);
   const [selectedPersona, setSelectedPersona] = useState<PersonaKey | 'random'>('random');
+  const [addToolOpen, setAddToolOpen] = useState(false);
   
   const { toast } = useToast();
   const { user, profile, refreshProfile } = useAuth();
@@ -60,6 +62,7 @@ export function SubmitStackDialog({ open, onOpenChange }: SubmitStackDialogProps
 
   const loadTools = async () => {
     console.log('🔧 Loading tools...');
+    // RLS policies automatically filter: approved tools for everyone, pending/rejected for creator
     const { data, error } = await supabase
       .from("tools")
       .select("id, name, slug, logo_url, category")
@@ -449,9 +452,24 @@ export function SubmitStackDialog({ open, onOpenChange }: SubmitStackDialogProps
     }
   };
 
+  // Handle tool added from AddToolDialog
+  const handleToolAdded = (tool: Tool) => {
+    // Add new tool to tools list if not already present
+    setTools((prev) => {
+      if (prev.find((t) => t.id === tool.id)) {
+        return prev;
+      }
+      return [...prev, tool];
+    });
+    // Select the new tool
+    toggleTool(tool);
+    // Reload tools to get updated list
+    loadTools();
+  };
+
   const filteredTools = tools.filter((tool) =>
     tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    tool.category.toLowerCase().includes(searchQuery.toLowerCase())
+    (tool.category && tool.category.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   return (
@@ -518,33 +536,60 @@ export function SubmitStackDialog({ open, onOpenChange }: SubmitStackDialogProps
 
             {/* Available Tools Grid */}
             <div className="space-y-2">
-              <Label>Available Tools</Label>
-              <div className="grid grid-cols-4 gap-3 max-h-96 overflow-y-auto p-1">
-                {filteredTools.map((tool) => {
-                  const isSelected = selectedTools.find((t) => t.id === tool.id);
-                  return (
-                    <button
-                      key={tool.id}
-                      onClick={() => toggleTool(tool)}
-                      className={`flex flex-col items-center gap-2 p-3 rounded-lg border transition-all ${
-                        isSelected
-                          ? "border-orange-500 bg-orange-500/10"
-                          : "border-zinc-800 bg-zinc-900 hover:border-zinc-700"
-                      }`}
-                    >
-                      <img
-                        src={tool.logo_url}
-                        alt={tool.name}
-                        className="w-12 h-12 rounded"
-                      />
-                      <div className="text-center">
-                        <div className="text-sm font-medium">{tool.name}</div>
-                        <div className="text-xs text-zinc-500">{tool.category}</div>
-                      </div>
-                    </button>
-                  );
-                })}
+              <div className="flex items-center justify-between">
+                <Label>Available Tools</Label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setAddToolOpen(true)}
+                  className="gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Tool
+                </Button>
               </div>
+              {filteredTools.length === 0 && searchQuery ? (
+                <div className="flex flex-col items-center justify-center py-8 px-4 border border-dashed border-zinc-800 rounded-lg">
+                  <p className="text-sm text-muted-foreground mb-4">
+                    No tools found matching "{searchQuery}"
+                  </p>
+                  <Button
+                    variant="outline"
+                    onClick={() => setAddToolOpen(true)}
+                    className="gap-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add "{searchQuery}" as a new tool
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-4 gap-3 max-h-96 overflow-y-auto p-1">
+                  {filteredTools.map((tool) => {
+                    const isSelected = selectedTools.find((t) => t.id === tool.id);
+                    return (
+                      <button
+                        key={tool.id}
+                        onClick={() => toggleTool(tool)}
+                        className={`flex flex-col items-center gap-2 p-3 rounded-lg border transition-all ${
+                          isSelected
+                            ? "border-orange-500 bg-orange-500/10"
+                            : "border-zinc-800 bg-zinc-900 hover:border-zinc-700"
+                        }`}
+                      >
+                        <img
+                          src={tool.logo_url}
+                          alt={tool.name}
+                          className="w-12 h-12 rounded"
+                        />
+                        <div className="text-center">
+                          <div className="text-sm font-medium">{tool.name}</div>
+                          <div className="text-xs text-zinc-500">{tool.category}</div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Persona Selection */}
@@ -667,6 +712,15 @@ export function SubmitStackDialog({ open, onOpenChange }: SubmitStackDialogProps
         open={authOpen}
         onOpenChange={setAuthOpen}
         onSuccess={handleAuthSuccess}
+      />
+
+      {/* Add Tool Dialog */}
+      <AddToolDialog
+        open={addToolOpen}
+        onOpenChange={setAddToolOpen}
+        onToolAdded={handleToolAdded}
+        existingTools={tools}
+        initialName={searchQuery}
       />
     </>
   );

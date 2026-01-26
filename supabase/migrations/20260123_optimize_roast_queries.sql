@@ -3,11 +3,19 @@
 -- Creates a view with pre-aggregated comment counts
 -- =====================================================
 
+-- Drop the view if it exists (needed to rename columns)
+DROP VIEW IF EXISTS community_roasts_with_stats CASCADE;
+
 -- Create a materialized view for roasts with comment counts
 -- This eliminates the N+1 query pattern when loading roast feeds
-CREATE OR REPLACE VIEW community_roasts_with_stats AS
+CREATE VIEW community_roasts_with_stats AS
 SELECT
-  cr.*,
+  cr.id,
+  cr.stack_id,
+  cr.user_id,
+  cr.roast_text AS roast_content,  -- Alias to match expected interface
+  cr.created_at,
+  NULL::TIMESTAMPTZ AS updated_at,  -- Column doesn't exist in table, return NULL
   COALESCE(comment_counts.comment_count, 0) AS comment_count,
   COALESCE(vote_stats.total_votes, 0) AS total_votes,
   COALESCE(vote_stats.upvotes, 0) AS upvotes,
@@ -24,8 +32,6 @@ LEFT JOIN (
     COUNT(*) AS comment_count
   FROM
     roast_comments
-  WHERE
-    deleted_at IS NULL OR deleted_at IS NULL  -- Exclude soft-deleted comments if that column exists
   GROUP BY
     roast_id
 ) comment_counts ON cr.id = comment_counts.roast_id
@@ -34,8 +40,8 @@ LEFT JOIN (
   SELECT
     roast_id,
     COUNT(*) AS total_votes,
-    SUM(CASE WHEN vote_value = 1 THEN 1 ELSE 0 END) AS upvotes,
-    SUM(CASE WHEN vote_value = -1 THEN 1 ELSE 0 END) AS downvotes
+    SUM(CASE WHEN vote_type = 'up' THEN 1 ELSE 0 END) AS upvotes,
+    SUM(CASE WHEN vote_type = 'down' THEN 1 ELSE 0 END) AS downvotes
   FROM
     roast_votes
   GROUP BY
@@ -52,10 +58,8 @@ COMMENT ON VIEW community_roasts_with_stats IS
 -- Create indexes to support the view efficiently
 -- =====================================================
 
--- Index for joining roast_comments
-CREATE INDEX IF NOT EXISTS idx_roast_comments_roast_id_active
-ON roast_comments(roast_id)
-WHERE deleted_at IS NULL;
+-- Index for joining roast_comments (already exists from previous migration)
+-- CREATE INDEX IF NOT EXISTS idx_roast_comments_roast_id ON roast_comments(roast_id);
 
 -- Index for joining roast_votes
 CREATE INDEX IF NOT EXISTS idx_roast_votes_roast_id
@@ -100,7 +104,7 @@ RETURNS TABLE (
   user_id UUID,
   roast_content TEXT,
   created_at TIMESTAMPTZ,
-  updated_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ,  -- Optional, may be NULL
   comment_count BIGINT,
   total_votes BIGINT,
   upvotes BIGINT,
@@ -112,44 +116,101 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 BEGIN
-  RETURN QUERY
-  SELECT
-    cr.id,
-    cr.stack_id,
-    cr.user_id,
-    cr.roast_content,
-    cr.created_at,
-    cr.updated_at,
-    cr.comment_count,
-    cr.total_votes,
-    cr.upvotes,
-    cr.downvotes,
-    cr.author_username,
-    cr.author_avatar_url
-  FROM
-    community_roasts_with_stats cr
-  WHERE
-    p_stack_id IS NULL OR cr.stack_id = p_stack_id
-  ORDER BY
-    CASE
-      WHEN p_sort_by = 'newest' THEN cr.created_at
-    END DESC,
-    CASE
-      WHEN p_sort_by = 'oldest' THEN cr.created_at
-    END ASC,
-    CASE
-      WHEN p_sort_by = 'top' THEN cr.total_votes
-    END DESC,
-    CASE
-      WHEN p_sort_by = 'controversial' THEN
-        CASE
-          WHEN cr.total_votes > 0 THEN
-            ABS(cr.upvotes::FLOAT - cr.downvotes::FLOAT) / cr.total_votes::FLOAT
-          ELSE 0
-        END
-    END ASC
-  LIMIT p_limit
-  OFFSET p_offset;
+  IF p_sort_by = 'oldest' THEN
+    RETURN QUERY
+    SELECT
+      cr.id,
+      cr.stack_id,
+      cr.user_id,
+      cr.roast_content,
+      cr.created_at,
+      cr.updated_at,
+      cr.comment_count,
+      cr.total_votes,
+      cr.upvotes,
+      cr.downvotes,
+      cr.author_username,
+      cr.author_avatar_url
+    FROM
+      community_roasts_with_stats cr
+    WHERE
+      p_stack_id IS NULL OR cr.stack_id = p_stack_id
+    ORDER BY cr.created_at ASC
+    LIMIT p_limit
+    OFFSET p_offset;
+  ELSIF p_sort_by = 'top' THEN
+    RETURN QUERY
+    SELECT
+      cr.id,
+      cr.stack_id,
+      cr.user_id,
+      cr.roast_content,
+      cr.created_at,
+      cr.updated_at,
+      cr.comment_count,
+      cr.total_votes,
+      cr.upvotes,
+      cr.downvotes,
+      cr.author_username,
+      cr.author_avatar_url
+    FROM
+      community_roasts_with_stats cr
+    WHERE
+      p_stack_id IS NULL OR cr.stack_id = p_stack_id
+    ORDER BY cr.total_votes DESC
+    LIMIT p_limit
+    OFFSET p_offset;
+  ELSIF p_sort_by = 'controversial' THEN
+    RETURN QUERY
+    SELECT
+      cr.id,
+      cr.stack_id,
+      cr.user_id,
+      cr.roast_content,
+      cr.created_at,
+      cr.updated_at,
+      cr.comment_count,
+      cr.total_votes,
+      cr.upvotes,
+      cr.downvotes,
+      cr.author_username,
+      cr.author_avatar_url
+    FROM
+      community_roasts_with_stats cr
+    WHERE
+      p_stack_id IS NULL OR cr.stack_id = p_stack_id
+    ORDER BY
+      CASE
+        WHEN cr.total_votes > 0 THEN
+          ABS(cr.upvotes::FLOAT - cr.downvotes::FLOAT) / cr.total_votes::FLOAT
+        ELSE 0
+      END ASC
+    LIMIT p_limit
+    OFFSET p_offset;
+  ELSE
+    -- Default: newest
+    RETURN QUERY
+    SELECT
+      cr.id,
+      cr.stack_id,
+      cr.user_id,
+      cr.roast_content,
+      cr.created_at,
+      cr.updated_at,
+      cr.comment_count,
+      cr.total_votes,
+      cr.upvotes,
+      cr.downvotes,
+      cr.author_username,
+      cr.author_avatar_url
+    FROM
+      community_roasts_with_stats cr
+    WHERE
+      p_stack_id IS NULL OR cr.stack_id = p_stack_id
+    ORDER BY cr.created_at DESC
+    LIMIT p_limit
+    OFFSET p_offset;
+  END IF;
 END;
 $$;
 

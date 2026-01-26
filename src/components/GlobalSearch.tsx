@@ -109,25 +109,8 @@ export function GlobalSearch({ open: controlledOpen, onOpenChange }: GlobalSearc
         });
       }
 
-      // Search Tools
-      const { data: tools } = await supabase
-        .from("tools")
-        .select("id, name, slug, category, logo_url")
-        .ilike("name", `%${searchQuery}%`)
-        .limit(5);
-
-      if (tools) {
-        tools.forEach((tool) => {
-          searchResults.push({
-            id: tool.id,
-            type: 'tool',
-            title: tool.name,
-            subtitle: tool.category,
-            url: `/tool/${tool.slug}`,
-            icon: tool.logo_url,
-          });
-        });
-      }
+      // Tools are searchable via the Submit Stack dialog
+      // Removed from global search to avoid 404 (no /tool/:slug route exists)
 
       setResults(searchResults);
     } catch (error) {

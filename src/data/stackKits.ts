@@ -2,6 +2,7 @@
 // Each kit includes tools, estimated costs, and use case descriptions
 
 import { getAffiliateLink } from './affiliateLinks';
+import type { StackKitWithStats, StackKitCategory, StackKitDifficulty } from '@/types/database';
 
 export interface StackKitTool {
   name: string;
@@ -443,4 +444,64 @@ export function enhanceKitsWithCommissions(kits: StackKit[] = STACK_KITS): Stack
     ...kit,
     totalCommission: calculateKitCommission(kit),
   }));
+}
+
+// Map old category to new category
+const CATEGORY_MAP: Record<StackKit['category'], StackKitCategory> = {
+  'startup': 'Full Stack Development',
+  'enterprise': 'Full Stack Development',
+  'side-project': 'Full Stack Development',
+  'ai-ml': 'AI & Machine Learning',
+  'mobile': 'Mobile Development',
+  'fullstack': 'Full Stack Development',
+};
+
+// Map old difficulty to new difficulty
+const DIFFICULTY_MAP: Record<StackKit['difficulty'], StackKitDifficulty> = {
+  'beginner': 'Beginner',
+  'intermediate': 'Intermediate',
+  'advanced': 'Advanced',
+};
+
+// Convert old StackKit type to StackKitWithStats for compatibility
+export function convertToStackKitWithStats(kit: StackKit): StackKitWithStats {
+  return {
+    id: kit.id,
+    creator_id: 'system', // Hardcoded kits don't have a creator
+    name: kit.name,
+    slug: kit.id, // Use id as slug for hardcoded kits
+    tagline: kit.tagline,
+    description: kit.description,
+    icon: kit.icon,
+    category: CATEGORY_MAP[kit.category] || 'Other',
+    tags: [...(kit.bestFor || []), ...(kit.highlights || [])].slice(0, 5), // Convert bestFor/highlights to tags
+    difficulty: kit.difficulty ? DIFFICULTY_MAP[kit.difficulty] : undefined,
+    total_monthly_cost_min: kit.totalMonthlyCost,
+    total_monthly_cost_max: kit.totalMonthlyCost,
+    upvote_count: 0,
+    comment_count: 0,
+    view_count: 0,
+    clone_count: 0,
+    published: true,
+    featured: kit.featured || false,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    creator_username: 'StackRoast',
+    creator_avatar_url: undefined,
+    tool_count: kit.tools.length,
+  };
+}
+
+// Get featured kits as StackKitWithStats
+export function getFeaturedKitsWithStats(): StackKitWithStats[] {
+  return getFeaturedKits().map(convertToStackKitWithStats);
+}
+
+// Get kit by ID (checks hardcoded kits first)
+export function getKitByIdWithStats(id: string): StackKitWithStats | null {
+  const hardcodedKit = getKitById(id);
+  if (hardcodedKit) {
+    return convertToStackKitWithStats(hardcodedKit);
+  }
+  return null;
 }

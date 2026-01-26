@@ -5,69 +5,191 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Search, 
-  ArrowLeft, 
-  Flame, 
-  DollarSign, 
-  Sparkles,
+import {
+  Search,
+  ArrowLeft,
+  Flame,
+  Plus,
   Filter,
   LayoutGrid,
-  List
+  List,
+  Loader2
 } from 'lucide-react';
-import { 
-  STACK_KITS, 
-  CATEGORY_INFO, 
-  DIFFICULTY_INFO,
-  getFeaturedKits,
-  enhanceKitsWithCommissions,
-  type StackKit 
-} from '@/data/stackKits';
+import { supabase } from '@/lib/supabase';
+import { useToast } from '@/hooks/use-toast';
+import { useSearchParams } from 'react-router-dom';
+import type { StackKitWithStats, StackKitCategory } from '@/types/database';
 import { StackKitCard } from '@/components/StackKitCard';
 import { StackKitDetailDialog } from '@/components/StackKitDetailDialog';
+import { SubmitKitDialog } from '@/components/SubmitKitDialog';
+import { getKitByIdWithStats } from '@/data/stackKits';
 
-type CategoryFilter = 'all' | StackKit['category'];
+type CategoryFilter = 'all' | StackKitCategory;
 type ViewMode = 'grid' | 'list';
+type SortBy = 'newest' | 'popular' | 'views';
+
+const CATEGORY_INFO: Record<StackKitCategory, { icon: string; label: string; description: string }> = {
+  'Full Stack Development': {
+    icon: '🌐',
+    label: 'Full Stack',
+    description: 'Complete development environments covering frontend, backend, and database'
+  },
+  'Frontend Development': {
+    icon: '🎨',
+    label: 'Frontend',
+    description: 'Tools for building beautiful and interactive user interfaces'
+  },
+  'Backend Development': {
+    icon: '⚙️',
+    label: 'Backend',
+    description: 'Server-side frameworks, APIs, and database management'
+  },
+  'Mobile Development': {
+    icon: '📱',
+    label: 'Mobile',
+    description: 'Cross-platform and native mobile app development tools'
+  },
+  'DevOps & Infrastructure': {
+    icon: '🔧',
+    label: 'DevOps',
+    description: 'Deployment, monitoring, and infrastructure management'
+  },
+  'Data & Analytics': {
+    icon: '📊',
+    label: 'Data',
+    description: 'Data processing, analysis, and visualization tools'
+  },
+  'AI & Machine Learning': {
+    icon: '🤖',
+    label: 'AI/ML',
+    description: 'Machine learning frameworks and AI development platforms'
+  },
+  'Design & Prototyping': {
+    icon: '✨',
+    label: 'Design',
+    description: 'Design tools, prototyping, and collaboration platforms'
+  },
+  'Testing & QA': {
+    icon: '🧪',
+    label: 'Testing',
+    description: 'Testing frameworks and quality assurance tools'
+  },
+  'Security & Monitoring': {
+    icon: '🔒',
+    label: 'Security',
+    description: 'Security tools, authentication, and application monitoring'
+  },
+  'Content & Marketing': {
+    icon: '📝',
+    label: 'Content',
+    description: 'Content management, marketing automation, and analytics'
+  },
+  'Productivity & Collaboration': {
+    icon: '👥',
+    label: 'Productivity',
+    description: 'Team collaboration and productivity tools'
+  },
+  'Other': {
+    icon: '📦',
+    label: 'Other',
+    description: 'Miscellaneous tools and utilities'
+  },
+};
 
 export default function StackKits() {
+  const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
-  const [selectedKit, setSelectedKit] = useState<StackKit | null>(null);
+  const [sortBy, setSortBy] = useState<SortBy>('popular');
+  const [selectedKit, setSelectedKit] = useState<StackKitWithStats | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [kits, setKits] = useState<StackKitWithStats[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [submitDialogOpen, setSubmitDialogOpen] = useState(false);
 
-  // Check for kit ID in URL params
+  // Load kits from database
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const kitId = params.get('kit');
+    loadKits();
+  }, [categoryFilter, sortBy]);
+
+  // Handle kit query parameter (from homepage click)
+  useEffect(() => {
+    const kitId = searchParams.get('kit');
     if (kitId) {
-      const kit = STACK_KITS.find(k => k.id === kitId);
-      if (kit) {
-        setSelectedKit(kit);
+      // First check if it's a hardcoded kit
+      const hardcodedKit = getKitByIdWithStats(kitId);
+      if (hardcodedKit) {
+        setSelectedKit(hardcodedKit);
+        // Remove query parameter after setting
+        setSearchParams({}, { replace: true });
+        return;
+      }
+
+      // Otherwise, wait for database kits to load and find it there
+      if (!loading && kits.length > 0) {
+        const dbKit = kits.find(k => k.id === kitId);
+        if (dbKit) {
+          setSelectedKit(dbKit);
+          setSearchParams({}, { replace: true });
+        } else {
+          // Kit not found, show error
+          toast({
+            title: "Kit not found",
+            description: "The requested kit could not be found.",
+            variant: "destructive",
+          });
+          setSearchParams({}, { replace: true });
+        }
       }
     }
-  }, []);
+  }, [searchParams, kits, loading, toast, setSearchParams]);
 
-  const featuredKits = enhanceKitsWithCommissions(getFeaturedKits());
-  const enhancedKits = enhanceKitsWithCommissions();
+  const loadKits = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.rpc('get_kits_with_stats', {
+        p_category: categoryFilter === 'all' ? null : categoryFilter,
+        p_tags: null,
+        p_limit: 100,
+        p_offset: 0,
+        p_sort_by: sortBy,
+      });
 
-  const filteredKits = enhancedKits.filter(kit => {
-    // Search filter
+      if (error) throw error;
+
+      setKits(data || []);
+    } catch (error: any) {
+      console.error('Error loading kits:', error);
+      toast({
+        title: "Error loading kits",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Filter kits by search query (client-side for responsiveness)
+  const filteredKits = kits.filter(kit => {
+    if (!search) return true;
+
     const searchLower = search.toLowerCase();
-    const matchesSearch = 
+    return (
       kit.name.toLowerCase().includes(searchLower) ||
       kit.tagline.toLowerCase().includes(searchLower) ||
-      kit.tools.some(t => t.name.toLowerCase().includes(searchLower));
-
-    // Category filter
-    const matchesCategory = categoryFilter === 'all' || kit.category === categoryFilter;
-
-    return matchesSearch && matchesCategory;
+      kit.description.toLowerCase().includes(searchLower) ||
+      kit.tags.some(tag => tag.toLowerCase().includes(searchLower))
+    );
   });
 
+  const featuredKits = kits.filter(kit => kit.featured);
+
   const categories = Object.entries(CATEGORY_INFO).map(([key, info]) => ({
-    id: key as StackKit['category'],
+    id: key as StackKitCategory,
     ...info,
-    count: enhancedKits.filter(k => k.category === key).length,
+    count: kits.filter(k => k.category === key).length,
   }));
 
   return (
@@ -75,43 +197,56 @@ export default function StackKits() {
       {/* Header */}
       <div className="border-b border-border bg-surface/50">
         <div className="container mx-auto px-4 pt-8 pb-4">
-          <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6">
-            <ArrowLeft className="w-4 h-4" />
-            Back to Home
-          </Link>
-          
+          <div className="flex items-center justify-between mb-6">
+            <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground">
+              <ArrowLeft className="w-4 h-4" />
+              Back to Home
+            </Link>
+            <Button onClick={() => setSubmitDialogOpen(true)} size="sm">
+              <Plus className="w-4 h-4 mr-2" />
+              Submit Your Kit
+            </Button>
+          </div>
+
           <div className="flex items-center justify-between gap-4">
             <p className="text-muted-foreground max-w-2xl">
-              Curated tech stack templates for every use case. Browse, preview, and clone 
+              Curated tech stack templates for every use case. Browse, preview, and clone
               complete setups to kickstart your next project.
             </p>
             <Badge variant="secondary" className="text-lg px-4 py-2 flex-shrink-0">
-              {enhancedKits.length} Kits
+              {kits.length} Kits
             </Badge>
           </div>
         </div>
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        {/* Featured Kits */}
-        {categoryFilter === 'all' && !search && (
-          <div className="mb-12">
-            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-              <Flame className="w-6 h-6 text-orange-500" />
-              Featured Kits
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {featuredKits.map(kit => (
-                <StackKitCard 
-                  key={kit.id} 
-                  kit={kit} 
-                  onClick={() => setSelectedKit(kit)}
-                  featured
-                />
-              ))}
-            </div>
+        {/* Loading State */}
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
           </div>
-        )}
+        ) : (
+          <>
+            {/* Featured Kits */}
+            {categoryFilter === 'all' && !search && featuredKits.length > 0 && (
+              <div className="mb-12">
+                <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+                  <Flame className="w-6 h-6 text-orange-500" />
+                  Featured Kits
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {featuredKits.map(kit => (
+                    <StackKitCard
+                      key={kit.id}
+                      kit={kit}
+                      onClick={() => setSelectedKit(kit)}
+                      featured
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
 
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-4 mb-8">
@@ -173,65 +308,83 @@ export default function StackKits() {
           </Card>
         )}
 
-        {/* Results */}
-        {filteredKits.length === 0 ? (
-          <Card className="p-12 text-center">
-            <Filter className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-            <p className="text-lg font-medium mb-2">No kits found</p>
-            <p className="text-muted-foreground mb-4">
-              Try adjusting your search or filters
-            </p>
-            <Button variant="outline" onClick={() => { setSearch(''); setCategoryFilter('all'); }}>
-              Clear Filters
-            </Button>
-          </Card>
-        ) : (
-          <div className={
-            viewMode === 'grid' 
-              ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
-              : 'space-y-4'
-          }>
-            {filteredKits.map(kit => (
-              <StackKitCard 
-                key={kit.id} 
-                kit={kit} 
-                onClick={() => setSelectedKit(kit)}
-                compact={viewMode === 'list'}
-              />
-            ))}
-          </div>
-        )}
+            {/* Results */}
+            {filteredKits.length === 0 ? (
+              <Card className="p-12 text-center">
+                <Filter className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                <p className="text-lg font-medium mb-2">No kits found</p>
+                <p className="text-muted-foreground mb-4">
+                  {kits.length === 0
+                    ? 'Be the first to submit a kit!'
+                    : 'Try adjusting your search or filters'}
+                </p>
+                {kits.length === 0 ? (
+                  <Button onClick={() => setSubmitDialogOpen(true)}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Submit Your Kit
+                  </Button>
+                ) : (
+                  <Button variant="outline" onClick={() => { setSearch(''); setCategoryFilter('all'); }}>
+                    Clear Filters
+                  </Button>
+                )}
+              </Card>
+            ) : (
+              <div className={
+                viewMode === 'grid'
+                  ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
+                  : 'space-y-4'
+              }>
+                {filteredKits.map(kit => (
+                  <StackKitCard
+                    key={kit.id}
+                    kit={kit}
+                    onClick={() => setSelectedKit(kit)}
+                    compact={viewMode === 'list'}
+                  />
+                ))}
+              </div>
+            )}
 
-        {/* Stats */}
-        <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="p-4 text-center bg-surface/50">
-            <div className="text-3xl font-bold text-orange-500">{enhancedKits.length}</div>
-            <div className="text-sm text-muted-foreground">Total Kits</div>
-          </Card>
-          <Card className="p-4 text-center bg-surface/50">
-            <div className="text-3xl font-bold text-green-500">
-              {enhancedKits.reduce((sum, k) => sum + k.tools.length, 0)}
-            </div>
-            <div className="text-sm text-muted-foreground">Tools Covered</div>
-          </Card>
-          <Card className="p-4 text-center bg-surface/50">
-            <div className="text-3xl font-bold text-blue-500">
-              {enhancedKits.filter(k => k.totalMonthlyCost === 0).length}
-            </div>
-            <div className="text-sm text-muted-foreground">Free Stacks</div>
-          </Card>
-          <Card className="p-4 text-center bg-surface/50">
-            <div className="text-3xl font-bold text-purple-500">{categories.length}</div>
-            <div className="text-sm text-muted-foreground">Categories</div>
-          </Card>
-        </div>
+            {/* Stats */}
+            {kits.length > 0 && (
+              <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4">
+                <Card className="p-4 text-center bg-surface/50">
+                  <div className="text-3xl font-bold text-orange-500">{kits.length}</div>
+                  <div className="text-sm text-muted-foreground">Total Kits</div>
+                </Card>
+                <Card className="p-4 text-center bg-surface/50">
+                  <div className="text-3xl font-bold text-green-500">
+                    {kits.reduce((sum, k) => sum + (k.tool_count || 0), 0)}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Tools Covered</div>
+                </Card>
+                <Card className="p-4 text-center bg-surface/50">
+                  <div className="text-3xl font-bold text-blue-500">
+                    {kits.reduce((sum, k) => sum + k.upvote_count, 0)}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Total Upvotes</div>
+                </Card>
+                <Card className="p-4 text-center bg-surface/50">
+                  <div className="text-3xl font-bold text-purple-500">{categories.length}</div>
+                  <div className="text-sm text-muted-foreground">Categories</div>
+                </Card>
+              </div>
+            )}
+          </>
+        )}
       </div>
 
-      {/* Detail Dialog */}
+      {/* Dialogs */}
       <StackKitDetailDialog
         kit={selectedKit}
         open={!!selectedKit}
         onOpenChange={(open) => !open && setSelectedKit(null)}
+      />
+
+      <SubmitKitDialog
+        open={submitDialogOpen}
+        onOpenChange={setSubmitDialogOpen}
       />
     </div>
   );

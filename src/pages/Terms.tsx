@@ -1,3 +1,5 @@
+import { Footer } from "@/components/Footer";
+
 export default function Terms() {
   return (
     <div className="min-h-screen bg-background">
@@ -130,6 +132,8 @@ export default function Terms() {
           </div>
         </div>
       </div>
+
+      <Footer />
     </div>
   );
 }

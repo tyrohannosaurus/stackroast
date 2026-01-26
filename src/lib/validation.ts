@@ -235,6 +235,74 @@ export const SortBySchema = z.enum(["newest", "oldest", "top", "controversial"])
 export type SortBy = z.infer<typeof SortBySchema>;
 
 // =====================================================
+// TOOL SCHEMAS
+// =====================================================
+
+export const ToolNameSchema = z
+  .string()
+  .min(1, "Tool name is required")
+  .max(100, "Tool name must be less than 100 characters")
+  .transform((val) => val.trim())
+  .refine((val) => !HTML_TAG_REGEX.test(val), {
+    message: "Tool name cannot contain HTML tags",
+  })
+  .refine((val) => val.length > 0, { message: "Tool name cannot be empty" });
+
+export const ToolCategorySchema = z.enum([
+  'Frontend',
+  'Backend',
+  'Database',
+  'Framework',
+  'UI Library',
+  'Styling',
+  'State Management',
+  'Project Management',
+  'Productivity',
+  'Design',
+  'Communication',
+  'Payment',
+  'Monitoring',
+  'Analytics',
+  'DevOps',
+  'Testing',
+  'Authentication',
+  'Other',
+]);
+
+export const ToolWebsiteUrlSchema = z
+  .string()
+  .url("Invalid website URL")
+  .max(500, "Website URL must be less than 500 characters")
+  .or(z.literal(""));
+
+export const ToolLogoUrlSchema = z
+  .string()
+  .url("Invalid logo URL")
+  .max(500, "Logo URL must be less than 500 characters")
+  .optional()
+  .or(z.literal(""));
+
+export const ToolDescriptionSchema = z
+  .string()
+  .max(500, "Description must be less than 500 characters")
+  .optional()
+  .transform((val) => val?.trim() || "")
+  .refine((val) => !SCRIPT_TAG_REGEX.test(val), {
+    message: "Description cannot contain script tags",
+  });
+
+export const CreateToolSchema = z.object({
+  name: ToolNameSchema,
+  category: ToolCategorySchema,
+  websiteUrl: ToolWebsiteUrlSchema,
+  logoUrl: ToolLogoUrlSchema.optional(),
+  description: ToolDescriptionSchema.optional(),
+  slug: validSlug().optional(), // Auto-generated if not provided
+});
+
+export type CreateToolInput = z.infer<typeof CreateToolSchema>;
+
+// =====================================================
 // UTILITY FUNCTIONS
 // =====================================================
 

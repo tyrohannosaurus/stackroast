@@ -77,11 +77,6 @@ export function Footer() {
                   Blog
                 </Link>
               </li>
-              <li>
-                <Link to="/docs" className="text-muted-foreground hover:text-orange-400 transition-colors">
-                  Documentation
-                </Link>
-              </li>
             </ul>
           </div>
 

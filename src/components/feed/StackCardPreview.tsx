@@ -94,8 +94,8 @@ function StackCardPreviewComponent({ stack }: StackCardPreviewProps) {
           <AvatarFallback>{stack.user.username[0]?.toUpperCase()}</AvatarFallback>
         </Avatar>
         <div className="flex-1 min-w-0">
-          <Link 
-            to={`/@${stack.user.username}`}
+          <Link
+            to={`/user/${stack.user.username}`}
             className="font-medium text-sm hover:text-orange-500 transition-colors"
           >
             @{stack.user.username}
