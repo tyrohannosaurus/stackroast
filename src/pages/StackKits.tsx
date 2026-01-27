@@ -22,7 +22,7 @@ import type { StackKitWithStats, StackKitCategory } from '@/types/database';
 import { StackKitCard } from '@/components/StackKitCard';
 import { StackKitDetailDialog } from '@/components/StackKitDetailDialog';
 import { SubmitKitDialog } from '@/components/SubmitKitDialog';
-import { getKitByIdWithStats } from '@/data/stackKits';
+import { getKitByIdWithStats, getAllKitsWithStats } from '@/data/stackKits';
 
 type CategoryFilter = 'all' | StackKitCategory;
 type ViewMode = 'grid' | 'list';
@@ -113,9 +113,15 @@ export default function StackKits() {
     loadKits();
   }, [categoryFilter, sortBy]);
 
-  // Handle kit query parameter (from homepage click)
+  // Handle kit query parameter (from homepage click) and search query
   useEffect(() => {
     const kitId = searchParams.get('kit');
+    const searchQuery = searchParams.get('search');
+    
+    if (searchQuery) {
+      setSearch(searchQuery);
+    }
+    
     if (kitId) {
       // First check if it's a hardcoded kit
       const hardcodedKit = getKitByIdWithStats(kitId);
@@ -148,7 +154,8 @@ export default function StackKits() {
   const loadKits = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.rpc('get_kits_with_stats', {
+      // Load database kits
+      const { data: dbKits, error } = await supabase.rpc('get_kits_with_stats', {
         p_category: categoryFilter === 'all' ? null : categoryFilter,
         p_tags: null,
         p_limit: 100,
@@ -158,12 +165,63 @@ export default function StackKits() {
 
       if (error) throw error;
 
-      setKits(data || []);
+      // Get all hardcoded kits
+      const hardcodedKits = getAllKitsWithStats();
+      console.log('📦 Hardcoded kits:', hardcodedKits.length);
+      console.log('📦 Database kits:', (dbKits || []).length);
+
+      // Merge database kits with hardcoded kits
+      // Use a Map to avoid duplicates (by id, not slug, since hardcoded kits use id as slug)
+      const kitsMap = new Map<string, StackKitWithStats>();
+
+      // Add hardcoded kits first
+      hardcodedKits.forEach(kit => {
+        kitsMap.set(kit.id, kit); // Use id as key to avoid conflicts
+      });
+
+      // Add database kits (they'll override hardcoded if id matches)
+      (dbKits || []).forEach(kit => {
+        kitsMap.set(kit.id, kit);
+      });
+
+      // Convert map to array
+      let allKits = Array.from(kitsMap.values());
+      console.log('📦 Total merged kits:', allKits.length);
+
+      // Apply category filter if needed
+      if (categoryFilter !== 'all') {
+        allKits = allKits.filter(kit => kit.category === categoryFilter);
+      }
+
+      // Apply sorting
+      if (sortBy === 'popular') {
+        allKits.sort((a, b) => b.upvote_count - a.upvote_count);
+      } else if (sortBy === 'views') {
+        allKits.sort((a, b) => b.view_count - a.view_count);
+      } else if (sortBy === 'newest') {
+        allKits.sort((a, b) => {
+          const dateA = new Date(a.created_at).getTime();
+          const dateB = new Date(b.created_at).getTime();
+          return dateB - dateA;
+        });
+      }
+
+      setKits(allKits);
     } catch (error: any) {
       console.error('Error loading kits:', error);
+      // Fallback to hardcoded kits only if database fails
+      const hardcodedKits = getAllKitsWithStats();
+      let filteredKits = hardcodedKits;
+      
+      if (categoryFilter !== 'all') {
+        filteredKits = hardcodedKits.filter(kit => kit.category === categoryFilter);
+      }
+      
+      setKits(filteredKits);
+      
       toast({
         title: "Error loading kits",
-        description: error.message,
+        description: "Showing hardcoded kits only. " + error.message,
         variant: "destructive",
       });
     } finally {
@@ -262,19 +320,21 @@ export default function StackKits() {
           </div>
 
           {/* Category Tabs */}
-          <Tabs value={categoryFilter} onValueChange={(v) => setCategoryFilter(v as CategoryFilter)}>
-            <TabsList className="h-10">
-              <TabsTrigger value="all" className="px-4">
-                All
-              </TabsTrigger>
-              {categories.map(cat => (
-                <TabsTrigger key={cat.id} value={cat.id} className="px-4 gap-1">
-                  <span>{cat.icon}</span>
-                  <span className="hidden sm:inline">{cat.label}</span>
+          <div className="overflow-x-auto -mx-4 px-4">
+            <Tabs value={categoryFilter} onValueChange={(v) => setCategoryFilter(v as CategoryFilter)}>
+              <TabsList className="h-10 inline-flex min-w-max">
+                <TabsTrigger value="all" className="px-4 flex-shrink-0">
+                  All
                 </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
+                {categories.map(cat => (
+                  <TabsTrigger key={cat.id} value={cat.id} className="px-4 gap-1 flex-shrink-0 whitespace-nowrap">
+                    <span>{cat.icon}</span>
+                    <span className="hidden sm:inline">{cat.label}</span>
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+          </div>
 
           {/* View Mode Toggle */}
           <div className="flex items-center gap-1 border rounded-lg p-1">

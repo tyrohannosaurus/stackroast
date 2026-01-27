@@ -100,7 +100,16 @@ export function StackKitCard({ kit, onClick, featured, compact }: StackKitCardPr
         <div className="px-6 pb-4">
           <div className="flex flex-wrap gap-1.5">
             {kit.tags.slice(0, 3).map((tag, i) => (
-              <Badge key={i} variant="secondary" className="text-xs">
+              <Badge 
+                key={i} 
+                variant="secondary" 
+                className="text-xs cursor-pointer hover:bg-orange-500/20 hover:text-orange-400 transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // Navigate to kits page with tag search
+                  window.location.href = `/kits?search=${encodeURIComponent(tag)}`;
+                }}
+              >
                 {tag}
               </Badge>
             ))}

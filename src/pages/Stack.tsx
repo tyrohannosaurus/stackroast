@@ -10,13 +10,18 @@ import { toast } from "sonner";
 import { StackThreeColumnLayout } from "@/components/StackThreeColumnLayout";
 import { LoadingFire } from "@/components/LoadingFire";
 import { FixMyStackButton } from "@/components/FixMyStackButton";
+import { FixMyBudget } from "@/components/FixMyBudget";
 import CloneStackButton from "@/components/CloneStackButton";
 import { ShareButton } from "@/components/ShareButton";
 import { AlternativeSuggestions } from "@/components/AlternativeSuggestions";
 import { SaveStackButton } from "@/components/SaveStackButton";
-import { FeaturedStacks } from "@/components/FeaturedStacks";
 import type { Stack as StackType } from "@/types";
 import type { StackAlternativesResult } from "@/lib/generateRoast";
+import { calculateStackScore, analyzeStackContext, type StackScore } from "@/lib/scoring/stack-scorer";
+import { CompactScoreBanner } from "@/components/stack/CompactScoreBanner";
+import { ScoreBreakdown } from "@/components/stack/ScoreBreakdown";
+import { ScoreComparison } from "@/components/stack/ScoreComparison";
+import { AIRoastTab } from "@/components/AIRoastTab";
 
 interface Stack {
   id: string;
@@ -56,6 +61,7 @@ export default function Stack() {
   const [username, setUsername] = useState<string>("anonymous");
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [stackScore, setStackScore] = useState<StackScore | null>(null);
 
   useEffect(() => {
     async function fetchStack() {
@@ -285,6 +291,58 @@ export default function Stack() {
 
   const totalCost = items.reduce((sum, item) => sum + (item.tool.base_price || 0), 0);
 
+  // Calculate stack score when items are loaded
+  useEffect(() => {
+    if (items.length > 0 && stack) {
+      // Transform items to tools format for scoring
+      const tools = items.map(item => ({
+        id: item.tool.id,
+        name: item.tool.name,
+        category: item.tool.category,
+        base_price: item.tool.base_price || null,
+        website_url: item.tool.website_url,
+        logo_url: item.tool.logo_url,
+      }));
+
+      // Analyze context from stack
+      const context = analyzeStackContext({
+        id: stack.id,
+        name: stack.name,
+        tools,
+      });
+
+      // Calculate score
+      const score = calculateStackScore(
+        {
+          id: stack.id,
+          name: stack.name,
+          tools,
+        },
+        context
+      );
+
+      setStackScore(score);
+
+      // Save score to database asynchronously (don't block)
+      supabase
+        .from('stacks')
+        .update({
+          score_overall: score.overall,
+          score_breakdown: score.breakdown,
+          score_badge: score.badge,
+          score_percentile: score.percentile,
+          score_calculated_at: new Date().toISOString(),
+        })
+        .eq('id', stack.id)
+        .then(({ error }) => {
+          if (error && error.code !== '42703') {
+            // Ignore column doesn't exist errors (migration not run yet)
+            console.warn('Failed to save score to database:', error);
+          }
+        });
+    }
+  }, [items, stack]);
+
   const copyLink = () => {
     navigator.clipboard.writeText(window.location.href);
     setCopied(true);
@@ -356,11 +414,11 @@ export default function Stack() {
 
       {/* Content */}
       <div className="container mx-auto px-4 py-8 max-w-7xl">
-        {/* Stack Header */}
+        {/* Stack Header with Actions */}
         <div className="mb-8">
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
             <div className="flex-1">
-              <h1 className="text-3xl md:text-4xl font-bold mb-2 text-foreground">{stack.name}</h1>
+              <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">{stack.name}</h1>
               <p className="text-muted-foreground">
                 {items.length} tools • ${totalCost.toFixed(2)}/month
               </p>
@@ -417,10 +475,10 @@ export default function Stack() {
           </div>
         </div>
 
-        {/* Tools Grid & Cost Breakdown - Side by Side */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          {/* Tools Grid - Takes 2 columns */}
-          <div className="lg:col-span-2">
+        {/* 1. Top Row: Tech Stack (wider) + Monthly Cost & Score (narrower) */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-8">
+          {/* Tech Stack Grid - Takes 3 columns (60%) */}
+          <div className="lg:col-span-3">
             <h2 className="text-xl font-semibold mb-4 text-foreground">Tech Stack</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {items.map((item) => (
@@ -428,51 +486,51 @@ export default function Stack() {
                 key={item.id}
                 className="p-4 bg-card border-border hover:border-orange-500/50 transition-all"
               >
-                  <div className="flex items-center gap-4">
-                    <img
-                      src={item.tool.logo_url}
-                      alt={item.tool.name}
-                      className="w-10 h-10 object-contain"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-foreground truncate">{item.tool.name}</h3>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="secondary" className="text-xs">
-                          {item.tool.category}
-                        </Badge>
-                        {item.tool.base_price > 0 && (
-                          <span className="text-xs text-muted-foreground">
-                            ${item.tool.base_price}/mo
-                          </span>
-                        )}
-                      </div>
+                <div className="flex items-center gap-4">
+                  <img
+                    src={item.tool.logo_url}
+                    alt={item.tool.name}
+                    className="w-10 h-10 object-contain"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-foreground truncate">{item.tool.name}</h3>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge variant="secondary" className="text-xs">
+                        {item.tool.category}
+                      </Badge>
+                      {item.tool.base_price > 0 && (
+                        <span className="text-xs text-muted-foreground">
+                          ${item.tool.base_price}/mo
+                        </span>
+                      )}
                     </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-orange-400 hover:text-orange-500 hover:bg-orange-500/10 flex-shrink-0"
-                      onClick={() => {
-                        trackAffiliateClick({
-                          toolId: item.tool.id,
-                          toolName: item.tool.name,
-                          affiliateUrl: item.tool.affiliate_link || null,
-                          stackId: stack.id,
-                          source: "stack_page",
-                        });
-                        window.open(item.tool.affiliate_link || item.tool.website_url, "_blank");
-                      }}
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                    </Button>
                   </div>
-                </Card>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-orange-400 hover:text-orange-500 hover:bg-orange-500/10 flex-shrink-0"
+                    onClick={() => {
+                      trackAffiliateClick({
+                        toolId: item.tool.id,
+                        toolName: item.tool.name,
+                        affiliateUrl: item.tool.affiliate_link || null,
+                        stackId: stack.id,
+                        source: "stack_page",
+                      });
+                      window.open(item.tool.affiliate_link || item.tool.website_url, "_blank");
+                    }}
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                  </Button>
+                </div>
+              </Card>
               ))}
             </div>
           </div>
 
-          {/* Cost Breakdown & Fix My Stack - Takes 1 column */}
-          <div className="space-y-6">
-            <Card className="p-6 bg-surface border-border">
+          {/* Monthly Cost & Stack Health Score - Takes 2 columns (40%) */}
+          <div className="lg:col-span-2 space-y-4">
+            <Card className="p-6 bg-surface border-border w-full">
               <h3 className="font-semibold mb-4 text-foreground">Monthly Cost</h3>
               <div className="space-y-2">
                 {items.filter(item => item.tool.base_price > 0).map((item) => (
@@ -490,33 +548,62 @@ export default function Stack() {
               </div>
             </Card>
 
-            <FixMyStackButton stack={transformedStack} />
+            {/* Stack Health Score below Monthly Cost */}
+            {stackScore && (
+              <CompactScoreBanner score={stackScore} />
+            )}
           </div>
         </div>
 
-        {/* Featured Stacks Sidebar */}
+        {/* 2. AI Roast Section (Full Width) */}
         <div className="mb-8">
-          <FeaturedStacks limit={1} showCarousel={false} />
+          <AIRoastTab stackId={stack.id} stackSlug={stack.slug} />
         </div>
 
-        {/* AI Alternatives Section */}
-        <div className="mb-8">
-          <div className="mb-4">
-            <h2 className="text-2xl font-bold text-foreground">Better Alternatives</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              AI-powered suggestions to optimize your stack and save money
-            </p>
-          </div>
+        {/* 3. Fix My Stack & Fix My Budget Buttons (Side by Side) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          <FixMyStackButton stack={transformedStack} />
+          {items.length > 0 && (
+            <FixMyBudget 
+              tools={items.map(item => ({
+                id: item.tool.id,
+                name: item.tool.name,
+                slug: item.tool.slug || '',
+                category: item.tool.category,
+                website_url: item.tool.website_url,
+                base_price: item.tool.base_price,
+                logo_url: item.tool.logo_url,
+                reason_text: '',
+                sort_order: 0,
+              }))}
+              currentMonthlyCost={totalCost}
+            />
+          )}
+        </div>
+
+        {/* 4. AI Recommendations (expandable, below buttons) */}
+        <div id="recommendations-section" className="mb-8">
           <AlternativeSuggestions
             stackId={stack.id}
             stackName={stack.name}
             tools={transformedStack.tools}
             existingAlternatives={aiAlternatives}
+            currentMonthlyCost={totalCost}
           />
         </div>
 
-        {/* Roasts & Discussion Layout */}
-        <StackThreeColumnLayout stackId={stack.id} stackSlug={stack.slug} />
+        {/* 5. Score Comparison: Original vs Recommended */}
+        {stackScore && (
+          <div className="mb-8">
+            <ScoreBreakdown breakdown={stackScore.breakdown} />
+            <ScoreComparison originalScore={stackScore} />
+          </div>
+        )}
+
+        {/* 8. Community Roasts & Discussion (social proof & engagement) */}
+        <div id="roast-section">
+          <StackThreeColumnLayout stackId={stack.id} stackSlug={stack.slug} />
+        </div>
       </div>
     </div>
   );

@@ -151,17 +151,19 @@ export function FixMyStackButton({ stack }: FixMyStackButtonProps) {
       <Button
         onClick={generateSuggestions}
         disabled={loading}
+        size="lg"
         className="w-full gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white border-0 shadow-lg hover:shadow-orange-500/50 transition-all font-semibold"
       >
         {loading ? (
           <>
             <Sparkles className="w-4 h-4 animate-pulse" />
-            AI Analyzing Stack...
+            Analyzing Stack...
           </>
         ) : (
           <>
             <Lightbulb className="w-4 h-4" />
-            Fix My Stack (AI-Powered)
+            Fix My Stack
+            <Sparkles className="w-4 h-4" />
           </>
         )}
       </Button>

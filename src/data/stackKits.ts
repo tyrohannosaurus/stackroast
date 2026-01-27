@@ -497,6 +497,11 @@ export function getFeaturedKitsWithStats(): StackKitWithStats[] {
   return getFeaturedKits().map(convertToStackKitWithStats);
 }
 
+// Get all kits as StackKitWithStats
+export function getAllKitsWithStats(): StackKitWithStats[] {
+  return STACK_KITS.map(convertToStackKitWithStats);
+}
+
 // Get kit by ID (checks hardcoded kits first)
 export function getKitByIdWithStats(id: string): StackKitWithStats | null {
   const hardcodedKit = getKitById(id);

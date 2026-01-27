@@ -39,6 +39,11 @@ export interface Tool {
   category: string;
   description?: string;
   priority_score?: number;
+  base_price?: number | null;
+  // Time and complexity fields for savings calculations (optional)
+  setup_time?: number | null; // Initial setup time in hours
+  maintenance_time?: number | null; // Ongoing maintenance in hours/month
+  complexity_score?: number | null; // 1-10 rating of tool complexity
   created_at: string;
 }
 
@@ -161,7 +166,15 @@ export type StackKitCategory =
   | 'Security & Monitoring'
   | 'Content & Marketing'
   | 'Productivity & Collaboration'
-  | 'Other';
+  | 'Other'
+  | 'E-commerce Stack'
+  | 'Marketing Stack'
+  | 'Content Creator Stack'
+  | 'Freelancer Stack'
+  | 'Web Hosting'
+  | 'Security Stack'
+  | 'SEO Stack'
+  | 'No-Code Stack';
 
 export type StackKitDifficulty = 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert';
 

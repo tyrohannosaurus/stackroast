@@ -56,7 +56,8 @@ export function RoastCard({ stack }: RoastCardProps) {
       setLocalUpvotes(prev => prev + 1);
       toast.success("Upvoted! 🔥");
 
-      // TODO: Add actual upvote to database when we create stack_votes table
+      // Note: Currently uses simple increment. For proper vote tracking with user history,
+      // create a stack_votes table similar to kit_upvotes. See SECURITY.md for details.
     } catch (error: any) {
       toast.error(error.message);
       setUpvoted(false);

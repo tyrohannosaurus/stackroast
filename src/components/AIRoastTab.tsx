@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Flame, RefreshCw, Share2, Download, ArrowUp, ArrowDown } from "lucide-react";
+import { Flame, RefreshCw, Share2, Download, ArrowUp, ArrowDown, Sparkles, TrendingUp, DollarSign } from "lucide-react";
 import { generateRoastStreaming } from "@/lib/generateRoast";
 import { BurnCardDialog } from "@/components/BurnCard";
 import { LoadingFire } from "@/components/LoadingFire";
@@ -31,9 +32,11 @@ interface StackInfo {
 interface AIRoastTabProps {
   stackId: string;
   stackSlug?: string;
+  onScrollToRecommendations?: () => void;
+  potentialSavings?: number;
 }
 
-export function AIRoastTab({ stackId, stackSlug }: AIRoastTabProps) {
+export function AIRoastTab({ stackId, stackSlug, onScrollToRecommendations, potentialSavings }: AIRoastTabProps) {
   const { user } = useAuth();
   const [aiRoast, setAiRoast] = useState<AIRoast | null>(null);
   const [stackInfo, setStackInfo] = useState<StackInfo | null>(null);
@@ -437,7 +440,7 @@ export function AIRoastTab({ stackId, stackSlug }: AIRoastTabProps) {
                     {getPersonaEmoji(streamingPersona)} Roasting as {streamingPersona}...
                   </p>
                 )}
-                <blockquote className="text-base md:text-lg font-light italic text-card-foreground leading-relaxed border-l-4 border-orange-500 pl-4">
+                <blockquote className="text-sm font-light italic text-card-foreground leading-relaxed border-l-4 border-orange-500 pl-4">
                   "{streamingText}
                   <span className="inline-block w-2 h-5 ml-1 bg-orange-500 animate-pulse" />
                   "
@@ -463,7 +466,7 @@ export function AIRoastTab({ stackId, stackSlug }: AIRoastTabProps) {
             <div className="space-y-4">
               {/* Roast text */}
               <div className="bg-card rounded-lg p-5 border border-orange-500/20">
-                <blockquote className="text-base md:text-lg font-light italic text-card-foreground leading-relaxed border-l-4 border-orange-500 pl-4">
+                <blockquote className="text-sm font-light italic text-card-foreground leading-relaxed border-l-4 border-orange-500 pl-4">
                   "{aiRoast.roast_text}"
                 </blockquote>
               </div>
@@ -482,7 +485,7 @@ export function AIRoastTab({ stackId, stackSlug }: AIRoastTabProps) {
                     >
                       <ArrowUp className="w-5 h-5" />
                     </Button>
-                    <span className={`font-bold text-lg min-w-[2rem] text-center ${
+                    <span className={`font-bold text-sm min-w-[2rem] text-center ${
                       ((aiRoast.upvotes ?? 0) - (aiRoast.downvotes ?? 0)) > 0 ? 'text-orange-500' : 
                       ((aiRoast.upvotes ?? 0) - (aiRoast.downvotes ?? 0)) < 0 ? 'text-blue-500' : 
                       'text-muted-foreground'
@@ -515,18 +518,53 @@ export function AIRoastTab({ stackId, stackSlug }: AIRoastTabProps) {
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Burn Intensity</span>
                   <span className={getBurnScoreColor(aiRoast.burn_score)}>
-                    {aiRoast.burn_score >= 80 ? '🔥🔥🔥 SAVAGE' : 
-                     aiRoast.burn_score >= 60 ? '🔥🔥 SPICY' : 
+                    {aiRoast.burn_score >= 80 ? '🔥🔥🔥 SAVAGE' :
+                     aiRoast.burn_score >= 60 ? '🔥🔥 SPICY' :
                      aiRoast.burn_score >= 40 ? '🔥 WARM' : '❄️ MILD'}
                   </span>
                 </div>
                 <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <div 
+                  <div
                     className="h-full bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500 transition-all duration-500"
                     style={{ width: `${aiRoast.burn_score}%` }}
                   />
                 </div>
               </div>
+
+              {/* Conversion CTA - Fix Your Stack */}
+              {onScrollToRecommendations && (
+                <Card className="mt-6 p-5 bg-gradient-to-r from-violet-500/20 via-purple-500/15 to-pink-500/20 border-2 border-violet-500/50 shadow-lg">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Sparkles className="w-5 h-5 text-violet-400" />
+                        <h3 className="font-bold text-lg text-foreground">
+                          Don't just get roasted. Get better.
+                        </h3>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        See exactly what to fix, upgrade, or ditch — powered by AI
+                      </p>
+                      {potentialSavings && potentialSavings > 0 && (
+                        <div className="flex items-center gap-2 mt-2 p-2 bg-green-500/10 rounded-md w-fit">
+                          <DollarSign className="w-4 h-4 text-green-500" />
+                          <span className="text-sm font-bold text-green-500">
+                            ${potentialSavings.toFixed(0)}/mo in savings found
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <Button
+                      onClick={onScrollToRecommendations}
+                      size="lg"
+                      className="w-full sm:w-auto bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600 text-white font-semibold shadow-lg hover:scale-105 transition-transform"
+                    >
+                      <TrendingUp className="w-4 h-4 mr-2" />
+                      Show Me How
+                    </Button>
+                  </div>
+                </Card>
+              )}
             </div>
           ) : generating ? (
             // Initial loading state before streaming starts
@@ -536,9 +574,11 @@ export function AIRoastTab({ stackId, stackSlug }: AIRoastTabProps) {
           ) : (
             // No roast yet state
             <div className="text-center py-12">
-              <Flame className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
-              <p className="text-lg text-muted-foreground mb-2">No AI roast yet</p>
-              <p className="text-sm text-muted-foreground">Click the button below to generate a savage AI roast for this stack</p>
+              <Flame className="w-12 h-12 mx-auto mb-3 text-orange-500/50" />
+              <p className="text-lg font-semibold text-foreground mb-2">This stack hasn't been roasted yet</p>
+              <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                Get a brutally honest AI critique of your tools. Find out what's weak, what's overkill, and what you're missing.
+              </p>
             </div>
           )}
         </div>
@@ -559,7 +599,7 @@ export function AIRoastTab({ stackId, stackSlug }: AIRoastTabProps) {
               className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
             >
               <RefreshCw className={`w-4 h-4 mr-2 ${generating ? 'animate-spin' : ''}`} />
-              {generating ? 'Generating...' : aiRoast ? 'Regenerate' : 'Generate Roast'}
+              {generating ? 'Roasting...' : aiRoast ? 'Roast Again' : 'Roast This Stack'}
             </Button>
           </div>
 

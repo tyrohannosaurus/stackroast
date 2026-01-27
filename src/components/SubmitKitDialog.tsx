@@ -14,6 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { AuthDialog } from "@/components/AuthDialog";
 import { AddToolDialog } from "@/components/AddToolDialog";
 import { EmojiPicker } from "@/components/EmojiPicker";
+import { ToolLogo } from "@/components/ToolLogo";
 import { generateSlug, isXssSafe } from "@/lib/validation";
 import type { Tool, StackKitCategory, StackKitDifficulty, CreateKitToolInput } from "@/types/database";
 
@@ -28,6 +29,7 @@ interface SubmitKitDialogProps {
 }
 
 const CATEGORIES: StackKitCategory[] = [
+  // Original technical categories
   'Full Stack Development',
   'Frontend Development',
   'Backend Development',
@@ -41,6 +43,15 @@ const CATEGORIES: StackKitCategory[] = [
   'Content & Marketing',
   'Productivity & Collaboration',
   'Other',
+  // New use-case specific categories
+  'E-commerce Stack',
+  'Marketing Stack',
+  'Content Creator Stack',
+  'Freelancer Stack',
+  'Web Hosting',
+  'Security Stack',
+  'SEO Stack',
+  'No-Code Stack',
 ];
 
 const DIFFICULTIES: StackKitDifficulty[] = ['Beginner', 'Intermediate', 'Advanced', 'Expert'];
@@ -506,11 +517,10 @@ export function SubmitKitDialog({ open, onOpenChange }: SubmitKitDialogProps) {
                         key={tool.id}
                         className="flex items-start gap-3 p-3 border rounded-lg bg-muted/50"
                       >
-                        <img
+                        <ToolLogo
                           src={tool.logo_url}
                           alt={tool.name}
-                          className="w-10 h-10 rounded"
-                          loading="lazy"
+                          size="md"
                         />
                         <div className="flex-1 min-w-0">
                           <div className="font-medium">{tool.name}</div>
@@ -523,6 +533,7 @@ export function SubmitKitDialog({ open, onOpenChange }: SubmitKitDialogProps) {
                           variant="ghost"
                           size="sm"
                           onClick={() => toggleTool(tool)}
+                          className="text-muted-foreground hover:text-destructive"
                         >
                           <X className="w-4 h-4" />
                         </Button>
@@ -603,11 +614,10 @@ export function SubmitKitDialog({ open, onOpenChange }: SubmitKitDialogProps) {
                     onClick={() => toggleTool(tool)}
                     className="flex flex-col items-center gap-2 p-3 border rounded-lg hover:bg-muted transition-colors"
                   >
-                    <img
+                    <ToolLogo
                       src={tool.logo_url}
                       alt={tool.name}
-                      className="w-12 h-12 rounded"
-                      loading="lazy"
+                      size="lg"
                     />
                     <span className="text-xs text-center font-medium truncate w-full">
                       {tool.name}

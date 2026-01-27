@@ -2,6 +2,87 @@
 import { supabase } from './supabase';
 import { getAffiliateLink } from '@/data/affiliateLinks';
 
+// A/B Test Variants - centralized for easy management
+export const AB_TESTS = {
+  CTA_VARIANT: {
+    name: 'cta_variant',
+    variants: ['save_money', 'start_free', 'try_now', 'fix_now'] as const,
+  },
+  SAVINGS_POSITION: {
+    name: 'savings_position',
+    variants: ['top', 'bottom', 'both'] as const,
+  },
+  EMAIL_CAPTURE_TIMING: {
+    name: 'email_capture_timing',
+    variants: ['immediate', 'delayed_3s', 'delayed_5s', 'on_scroll'] as const,
+  },
+} as const;
+
+// Get or create user's A/B test assignments
+export function getABTestVariant<T extends string>(
+  testName: string,
+  variants: readonly T[]
+): T {
+  const storageKey = `ab_test_${testName}`;
+
+  // Check localStorage for existing assignment
+  if (typeof window !== 'undefined') {
+    const existing = localStorage.getItem(storageKey);
+    if (existing && variants.includes(existing as T)) {
+      return existing as T;
+    }
+
+    // Assign new variant randomly
+    const variant = variants[Math.floor(Math.random() * variants.length)];
+    localStorage.setItem(storageKey, variant);
+    return variant;
+  }
+
+  // Server-side fallback
+  return variants[0];
+}
+
+// Track A/B test event
+export async function trackABTestEvent(
+  testName: string,
+  variant: string,
+  eventType: 'impression' | 'click' | 'conversion',
+  metadata?: Record<string, unknown>
+): Promise<void> {
+  try {
+    const { error } = await supabase.from('ab_test_events').insert({
+      test_name: testName,
+      variant,
+      event_type: eventType,
+      metadata,
+      created_at: new Date().toISOString(),
+      session_id: getSessionId(),
+    });
+
+    if (error && error.code !== '42P01') {
+      // Ignore table doesn't exist errors
+      console.warn('AB test tracking error:', error);
+    }
+  } catch (error) {
+    // Silent fail - don't block user experience
+  }
+}
+
+// Session ID for tracking user journeys
+function getSessionId(): string {
+  if (typeof window === 'undefined') return 'server';
+
+  const key = 'stackroast_session_id';
+  let sessionId = sessionStorage.getItem(key);
+
+  if (!sessionId) {
+    sessionId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    sessionStorage.setItem(key, sessionId);
+  }
+
+  return sessionId;
+}
+
 /**
  * Track a click on an alternative tool suggestion
  * This is used for affiliate revenue tracking
@@ -11,9 +92,20 @@ export async function trackAlternativeClick(
   toolName: string,
   alternativeName: string,
   affiliateUrl: string,
-  userId?: string
+  userId?: string,
+  metadata?: {
+    recType?: string;
+    savings?: string;
+    ctaVariant?: string;
+    position?: number;
+    source?: string;
+  }
 ): Promise<void> {
   try {
+    // Get affiliate commission info
+    const affiliateInfo = getAffiliateLink(alternativeName);
+    const estimatedCommission = affiliateInfo?.commission ?? 0;
+
     const { error } = await supabase
       .from('alternative_clicks')
       .insert({
@@ -22,11 +114,39 @@ export async function trackAlternativeClick(
         alternative_name: alternativeName,
         affiliate_url: affiliateUrl,
         user_id: userId || null,
+        // Enhanced tracking fields
+        session_id: getSessionId(),
+        rec_type: metadata?.recType || null,
+        savings_amount: metadata?.savings || null,
+        cta_variant: metadata?.ctaVariant || null,
+        position: metadata?.position || null,
+        source: metadata?.source || 'recommendations',
+        estimated_commission: estimatedCommission,
+        referrer: typeof window !== 'undefined' ? window.location.href : null,
       });
 
-    if (error) {
+    if (error && error.code !== '42P01' && error.code !== '42703') {
       console.error('Error tracking alternative click:', error);
       // Don't throw - we don't want to block user navigation
+    }
+
+    // Track A/B test conversion if applicable
+    if (metadata?.ctaVariant) {
+      await trackABTestEvent(
+        AB_TESTS.CTA_VARIANT.name,
+        metadata.ctaVariant,
+        'conversion',
+        { toolName: alternativeName, commission: estimatedCommission }
+      );
+    }
+
+    // Also track with Google Analytics if available
+    if (typeof window !== 'undefined' && (window as any).gtag) {
+      (window as any).gtag('event', 'affiliate_click', {
+        event_category: 'monetization',
+        event_label: alternativeName,
+        value: estimatedCommission,
+      });
     }
   } catch (error) {
     console.error('Error tracking alternative click:', error);
@@ -128,5 +248,103 @@ export async function trackStackKitClone(
   } catch (error) {
     // Silently fail - analytics shouldn't break the app
     console.log('Stack kit clone tracked:', { kitId, kitName, userId });
+  }
+}
+
+/**
+ * Track conversion funnel events
+ * Use this to track the user journey from roast → recommendations → click → conversion
+ */
+export type FunnelStep =
+  | 'roast_generated'
+  | 'recommendations_viewed'
+  | 'recommendations_scrolled'
+  | 'cta_clicked'
+  | 'email_captured'
+  | 'affiliate_clicked'
+  | 'kit_viewed'
+  | 'kit_cloned';
+
+export async function trackFunnelEvent(
+  step: FunnelStep,
+  metadata?: {
+    stackId?: string;
+    userId?: string;
+    savingsAmount?: number;
+    recommendationCount?: number;
+    toolName?: string;
+    kitId?: string;
+  }
+): Promise<void> {
+  try {
+    const sessionId = getSessionId();
+
+    const { error } = await supabase.from('funnel_events').insert({
+      session_id: sessionId,
+      step,
+      user_id: metadata?.userId || null,
+      stack_id: metadata?.stackId || null,
+      savings_amount: metadata?.savingsAmount || null,
+      recommendation_count: metadata?.recommendationCount || null,
+      tool_name: metadata?.toolName || null,
+      kit_id: metadata?.kitId || null,
+      created_at: new Date().toISOString(),
+      referrer: typeof window !== 'undefined' ? document.referrer : null,
+      page_url: typeof window !== 'undefined' ? window.location.href : null,
+    });
+
+    if (error && error.code !== '42P01') {
+      // Ignore table doesn't exist errors
+      console.warn('Funnel event tracking error:', error);
+    }
+
+    // Also track with Google Analytics
+    if (typeof window !== 'undefined' && (window as any).gtag) {
+      (window as any).gtag('event', step, {
+        event_category: 'funnel',
+        value: metadata?.savingsAmount || 0,
+      });
+    }
+  } catch (error) {
+    // Silent fail
+  }
+}
+
+/**
+ * Track email capture for retargeting
+ */
+export async function trackEmailCapture(
+  email: string,
+  source: string,
+  metadata?: {
+    stackName?: string;
+    savingsAmount?: number;
+    recommendationCount?: number;
+    marketingConsent?: boolean;
+  }
+): Promise<void> {
+  try {
+    const { error } = await supabase.from('email_captures').insert({
+      email,
+      source,
+      stack_name: metadata?.stackName || null,
+      potential_savings: metadata?.savingsAmount || null,
+      recommendation_count: metadata?.recommendationCount || null,
+      marketing_consent: metadata?.marketingConsent ?? false,
+      session_id: getSessionId(),
+      captured_at: new Date().toISOString(),
+    });
+
+    if (error && error.code !== '42P01') {
+      console.warn('Email capture tracking error:', error);
+    }
+
+    // Track funnel event
+    await trackFunnelEvent('email_captured', {
+      savingsAmount: metadata?.savingsAmount,
+      recommendationCount: metadata?.recommendationCount,
+    });
+  } catch (error) {
+    console.warn('Email capture error:', error);
   }
 }

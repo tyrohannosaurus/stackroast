@@ -14,7 +14,9 @@ import {
   ExternalLink,
   Sparkles,
   Loader2,
-  Copy
+  Copy,
+  DollarSign,
+  Zap
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { StackKitWithStats, ToolInKit } from '@/types/database';
@@ -22,6 +24,9 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { getKitById, type StackKitTool } from '@/data/stackKits';
 import { stringToUUID } from '@/lib/uuid';
+import { FixMyBudget } from '@/components/FixMyBudget';
+import { trackAlternativeClick } from '@/lib/analytics';
+import { ToolLogo } from '@/components/ToolLogo';
 
 interface StackKitDetailDialogProps {
   kit: StackKitWithStats | null;
@@ -58,7 +63,7 @@ export function StackKitDetailDialog({ kit, open, onOpenChange }: StackKitDetail
           const toolSlugs = hardcodedKit.tools.map(t => t.slug);
           const { data: dbTools } = await supabase
             .from('tools')
-            .select('id, name, slug, logo_url, category, website_url')
+            .select('id, name, slug, logo_url, category, website_url, base_price')
             .in('slug', toolSlugs);
 
           // Create a map of slug -> tool data for quick lookup
@@ -98,7 +103,8 @@ export function StackKitDetailDialog({ kit, open, onOpenChange }: StackKitDetail
             slug,
             logo_url,
             category,
-            website_url
+            website_url,
+            base_price
           )
         `)
         .eq('kit_id', kit.id)
@@ -455,7 +461,16 @@ export function StackKitDetailDialog({ kit, open, onOpenChange }: StackKitDetail
               <h3 className="font-semibold mb-2 text-sm">Tags</h3>
               <div className="flex flex-wrap gap-2">
                 {kit.tags.map((tag, i) => (
-                  <Badge key={i} variant="secondary" className="text-xs">
+                  <Badge 
+                    key={i} 
+                    variant="secondary" 
+                    className="text-xs cursor-pointer hover:bg-orange-500/20 hover:text-orange-400 transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // Navigate to kits page with tag filter
+                      window.location.href = `/kits?search=${encodeURIComponent(tag)}`;
+                    }}
+                  >
                     {tag}
                   </Badge>
                 ))}
@@ -499,36 +514,50 @@ export function StackKitDetailDialog({ kit, open, onOpenChange }: StackKitDetail
             ) : (
               <div className="space-y-3">
                 {tools.map((tool, i) => (
-                  <Card key={i} className="p-3 bg-surface/30">
+                  <Card key={i} className="p-4 bg-surface/30 hover:bg-surface/50 transition-colors">
                     <div className="flex items-start gap-3">
-                      <img
+                      <ToolLogo
                         src={tool.logo_url}
                         alt={tool.name}
-                        className="w-10 h-10 rounded"
-                        loading="lazy"
+                        size="lg"
+                        className="rounded-lg"
                       />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium">{tool.name}</span>
+                          <span className="font-semibold">{tool.name}</span>
                           <Badge variant="outline" className="text-xs">
                             {tool.category}
                           </Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-muted-foreground mb-2">
                           {tool.reason_text}
                         </p>
+                        {(tool as any).base_price !== undefined && (tool as any).base_price > 0 && (
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <DollarSign className="w-3 h-3" />
+                            <span>From ${(tool as any).base_price}/mo</span>
+                          </div>
+                        )}
                       </div>
                       {tool.website_url && (
-                        <a
-                          href={tool.website_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="shrink-0"
+                        <Button
+                          size="sm"
+                          className="shrink-0 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-medium shadow-md"
+                          onClick={() => {
+                            // Track the affiliate click
+                            trackAlternativeClick(
+                              kit?.id || '',
+                              kit?.name || '',
+                              tool.name,
+                              tool.website_url!,
+                              user?.id
+                            );
+                            window.open(tool.website_url, '_blank', 'noopener,noreferrer');
+                          }}
                         >
-                          <Button variant="ghost" size="sm">
-                            <ExternalLink className="w-4 h-4" />
-                          </Button>
-                        </a>
+                          <Zap className="w-3.5 h-3.5 mr-1" />
+                          Try Free
+                        </Button>
                       )}
                     </div>
                   </Card>
@@ -536,6 +565,41 @@ export function StackKitDetailDialog({ kit, open, onOpenChange }: StackKitDetail
               </div>
             )}
           </div>
+
+          {/* Cost Optimization CTA */}
+          {tools.length > 0 && (
+            <Card className="p-5 bg-gradient-to-r from-green-500/15 via-emerald-500/10 to-teal-500/15 border-2 border-green-500/30">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-full bg-green-500/20">
+                    <DollarSign className="w-5 h-5 text-green-500" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-foreground">Want to optimize costs?</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Find budget-friendly alternatives to these tools
+                    </p>
+                  </div>
+                </div>
+                {kit.total_monthly_cost_max && kit.total_monthly_cost_max > 0 && (
+                  <div className="text-right">
+                    <p className="text-xs text-muted-foreground">Current kit cost</p>
+                    <p className="text-lg font-bold text-foreground">
+                      ${kit.total_monthly_cost_min || 0} - ${kit.total_monthly_cost_max}/mo
+                    </p>
+                  </div>
+                )}
+              </div>
+            </Card>
+          )}
+
+          <Separator />
+
+          {/* Fix My Budget Section */}
+          <FixMyBudget
+            tools={tools}
+            currentMonthlyCost={kit.total_monthly_cost_max || kit.total_monthly_cost_min || 0}
+          />
 
           <Separator />
 
