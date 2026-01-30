@@ -28,7 +28,7 @@ type CategoryFilter = 'all' | StackKitCategory;
 type ViewMode = 'grid' | 'list';
 type SortBy = 'newest' | 'popular' | 'views';
 
-const CATEGORY_INFO: Record<StackKitCategory, { icon: string; label: string; description: string }> = {
+const CATEGORY_INFO: Partial<Record<StackKitCategory, { icon: string; label: string; description: string }>> = {
   'Full Stack Development': {
     icon: '🌐',
     label: 'Full Stack',
@@ -88,6 +88,46 @@ const CATEGORY_INFO: Record<StackKitCategory, { icon: string; label: string; des
     icon: '👥',
     label: 'Productivity',
     description: 'Team collaboration and productivity tools'
+  },
+  'E-commerce Stack': {
+    icon: '🛒',
+    label: 'E-commerce',
+    description: 'Online store and e-commerce development tools'
+  },
+  'Marketing Stack': {
+    icon: '📣',
+    label: 'Marketing',
+    description: 'Marketing and growth tools'
+  },
+  'Content Creator Stack': {
+    icon: '🎬',
+    label: 'Content Creator',
+    description: 'Tools for content creators and influencers'
+  },
+  'Freelancer Stack': {
+    icon: '💼',
+    label: 'Freelancer',
+    description: 'Tools for freelancers and independent developers'
+  },
+  'Web Hosting': {
+    icon: '🌍',
+    label: 'Web Hosting',
+    description: 'Web hosting and deployment platforms'
+  },
+  'Security Stack': {
+    icon: '🛡️',
+    label: 'Security',
+    description: 'Security and privacy tools'
+  },
+  'SEO Stack': {
+    icon: '🔍',
+    label: 'SEO',
+    description: 'Search engine optimization tools'
+  },
+  'No-Code Stack': {
+    icon: '🧩',
+    label: 'No-Code',
+    description: 'No-code and low-code development tools'
   },
   'Other': {
     icon: '📦',
