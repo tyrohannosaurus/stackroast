@@ -22,10 +22,10 @@ export function Hero() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-12">
       {/* Main Heading with Animation */}
-      <h1 className="text-6xl md:text-7xl font-bold text-center leading-tight">
-        Roast my{" "}
+      <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-center leading-tight tracking-tighter">
+        <span className="text-gradient">Roast my</span>{" "}
         <span className="hero-typewriter">
           <TypeAnimation
             sequence={[
@@ -46,28 +46,31 @@ export function Hero() {
             speed={50}
             repeat={Infinity}
             cursor={true}
-            className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500"
           />
         </span>
       </h1>
 
       {/* Subtitle */}
-      <p className="text-xl text-muted-foreground text-center max-w-2xl mx-auto">
+      <p className="text-lg md:text-xl text-muted-foreground text-center max-w-2xl mx-auto leading-relaxed">
         Submit your tech stack. Get brutally honest AI-powered critiques. Join
         the community of developers who embrace the roast.
       </p>
 
       {/* CTA Buttons */}
-      <div className="flex flex-col items-center justify-center gap-4">
-        <div className="flex flex-wrap items-center justify-center gap-3">
-          <Button size="lg" className="gap-2" onClick={() => setDialogOpen(true)}>
+      <div className="flex flex-col items-center justify-center gap-6">
+        <div className="flex flex-wrap items-center justify-center gap-4">
+          <Button 
+            size="lg" 
+            className="gap-2 rounded-full bg-gradient-to-r from-cyber-blue to-cyber-purple hover:shadow-cyber-glow transition-all duration-300" 
+            onClick={() => setDialogOpen(true)}
+          >
             <Flame className="w-5 h-5" />
             Submit Your Stack
           </Button>
           <Button 
             size="lg" 
             variant="outline" 
-            className="gap-2"
+            className="gap-2 rounded-full border-white/20 hover:border-white/40 hover:bg-white/5 transition-all duration-300"
             onClick={() => setRepoDialogOpen(true)}
           >
             <Github className="w-5 h-5" />
@@ -76,18 +79,18 @@ export function Hero() {
           <Button 
             size="lg" 
             variant="outline" 
-            className="gap-2 border-purple-500/50 text-purple-400 hover:bg-purple-500/10"
+            className="gap-2 rounded-full border-cyber-purple/50 text-cyber-purple hover:bg-cyber-purple/10 transition-all duration-300"
             onClick={() => setVisualRoastOpen(true)}
           >
             <Eye className="w-5 h-5" />
             Visual Analysis
           </Button>
         </div>
-        <div className="flex flex-wrap items-center justify-center gap-3">
+        <div className="flex flex-wrap items-center justify-center gap-4">
           <Button 
             size="lg" 
             variant="ghost" 
-            className="gap-2 text-orange-400 hover:text-orange-300"
+            className="gap-2 text-cyber-blue hover:text-cyber-blue/80 hover:bg-cyber-blue/10 rounded-full transition-all duration-300"
             onClick={() => setRoastFriendOpen(true)}
           >
             <Users className="w-5 h-5" />
@@ -97,7 +100,7 @@ export function Hero() {
             <Button
               size="lg"
               variant="ghost"
-              className="gap-2"
+              className="gap-2 rounded-full hover:bg-white/5 transition-all duration-300"
             >
               <Sparkles className="w-5 h-5" />
               Browse Stack Kits
@@ -107,7 +110,7 @@ export function Hero() {
             size="lg"
             variant="ghost"
             onClick={scrollToRoasts}
-            className="gap-2"
+            className="gap-2 rounded-full hover:bg-white/5 transition-all duration-300"
           >
             View Recent Roasts
             <span className="ml-1">→</span>
