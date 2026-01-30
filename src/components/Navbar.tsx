@@ -45,7 +45,7 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
 
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
+      <nav className="fixed top-0 left-0 right-0 z-50 glass-nav">
         <div className="container mx-auto px-4">
           <div className="flex h-16 items-center justify-between gap-4">
             {/* Logo */}
@@ -66,7 +66,7 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
                 variant="ghost"
                 size="sm"
                 onClick={onSearchOpen}
-                className="md:hidden w-9 h-9 p-0"
+                className="md:hidden w-9 h-9 p-0 rounded-full hover:bg-white/5"
               >
                 <Search className="w-5 h-5" />
               </Button>
@@ -82,11 +82,11 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
                 // Show profile when loaded
                 <Link
                   to={`/user/${profile.username}`}
-                  className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-muted transition-colors"
+                  className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-white/5 transition-colors"
                 >
-                  <Avatar className="w-7 h-7 ring-2 ring-orange-500/50">
+                  <Avatar className="w-7 h-7 ring-1 ring-cyber-blue/50">
                     <AvatarImage src={profile.avatar_url} />
-                    <AvatarFallback className="bg-orange-500/20 text-orange-500 text-xs">
+                    <AvatarFallback className="bg-cyber-blue/20 text-cyber-blue text-xs">
                       {profile.username[0]?.toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
@@ -99,24 +99,24 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
                 variant="ghost"
                 size="sm"
                 onClick={toggleTheme}
-                className="w-9 h-9 p-0"
+                className="w-9 h-9 p-0 rounded-full hover:bg-white/5"
               >
                 {theme === "dark" ? (
-                  <Sun className="w-5 h-5 text-orange-400" />
+                  <Sun className="w-5 h-5 text-cyber-blue" />
                 ) : (
-                  <Moon className="w-5 h-5 text-orange-500" />
+                  <Moon className="w-5 h-5 text-cyber-blue" />
                 )}
               </Button>
 
               {/* Karma Display */}
               {authLoading && user ? (
                 // Loading skeleton for karma
-                <Skeleton className="w-20 h-8 rounded-md" />
+                <Skeleton className="w-20 h-8 rounded-full" />
               ) : user && profile ? (
                 // Show karma when loaded
-                <div className="flex items-center gap-2 text-sm px-2 py-1 rounded-md bg-orange-500/10 border border-orange-500/20">
-                  <Flame className="w-4 h-4 text-orange-500" />
-                  <span className="text-orange-500 font-semibold">
+                <div className="flex items-center gap-2 text-sm px-3 py-1 rounded-full bg-cyber-blue/10 border border-cyber-blue/20">
+                  <Flame className="w-4 h-4 text-cyber-blue" />
+                  <span className="text-cyber-blue font-semibold">
                     {profile.karma_points ?? 0}
                   </span>
                   <span className="hidden sm:inline text-xs text-muted-foreground">logs</span>
@@ -128,6 +128,7 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
                 variant="ghost"
                 size="sm"
                 onClick={() => setMenuOpen(!menuOpen)}
+                className="rounded-full hover:bg-white/5"
               >
                 {menuOpen ? (
                   <X className="w-5 h-5" />
@@ -150,15 +151,16 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
           />
 
           {/* Menu Panel */}
-          <div className="fixed top-0 right-0 h-full w-80 bg-card border-l border-border z-50 shadow-2xl">
+          <div className="fixed top-0 right-0 h-full w-80 glass-surface z-50 border-l border-white/10">
             <div className="flex flex-col h-full">
               {/* Header */}
-              <div className="flex items-center justify-between p-4 border-b border-border">
-                <h3 className="font-semibold text-lg">Menu</h3>
+              <div className="flex items-center justify-between p-4 border-b border-white/10">
+                <h3 className="font-semibold text-lg tracking-tight">Menu</h3>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={closeMenu}
+                  className="rounded-full hover:bg-white/5"
                 >
                   <X className="w-5 h-5" />
                 </Button>
@@ -169,7 +171,7 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
                 {/* User Profile Section */}
                 {authLoading && user ? (
                   // Loading skeleton in menu
-                  <div className="mb-6 p-4 rounded-lg bg-gradient-to-br from-orange-500/10 via-red-500/10 to-orange-500/5 border border-orange-500/20">
+                  <div className="mb-6 p-4 rounded-xl glass-card">
                     <div className="flex items-center gap-3 mb-3">
                       <Skeleton className="w-10 h-10 rounded-full" />
                       <div className="flex-1 space-y-2">
@@ -177,27 +179,27 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
                         <Skeleton className="h-6 w-20" />
                       </div>
                     </div>
-                    <Skeleton className="h-9 w-full rounded-md" />
+                    <Skeleton className="h-9 w-full rounded-full" />
                   </div>
                 ) : user && profile ? (
                   // Show profile when loaded
-                  <div className="mb-6 p-4 rounded-lg bg-gradient-to-br from-orange-500/10 via-red-500/10 to-orange-500/5 border border-orange-500/20">
+                  <div className="mb-6 p-4 rounded-xl glass-card">
                     <div className="flex items-center gap-3 mb-3">
-                      <Avatar className="ring-2 ring-orange-500/50">
+                      <Avatar className="ring-1 ring-cyber-blue/50">
                         <AvatarImage src={profile.avatar_url} />
-                        <AvatarFallback className="bg-orange-500/20 text-orange-500">
+                        <AvatarFallback className="bg-cyber-blue/20 text-cyber-blue">
                           {profile.username[0]?.toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
                         <p className="font-medium text-foreground">{profile.username}</p>
                         <div className="flex items-center gap-2 mt-1">
-                          <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-500/20 border border-orange-500/30">
-                            <Flame className="w-3.5 h-3.5 text-orange-500" />
-                            <span className="text-sm font-semibold text-orange-500">
+                          <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-cyber-blue/20 border border-cyber-blue/30">
+                            <Flame className="w-3.5 h-3.5 text-cyber-blue" />
+                            <span className="text-sm font-semibold text-cyber-blue">
                               {profile.karma_points ?? 0}
                             </span>
-                            <span className="text-xs text-orange-400/80 ml-0.5">logs</span>
+                            <span className="text-xs text-cyber-blue/80 ml-0.5">logs</span>
                           </div>
                         </div>
                       </div>
@@ -205,7 +207,7 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
                     <Link
                       to={`/user/${profile.username}`}
                       onClick={closeMenu}
-                      className="block w-full text-center py-2 px-4 rounded-md bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 transition-colors text-sm font-medium text-white"
+                      className="block w-full text-center py-2.5 px-4 rounded-full bg-gradient-to-r from-cyber-blue to-cyber-purple hover:shadow-cyber-glow transition-all text-sm font-medium text-white"
                     >
                       View Profile
                     </Link>
@@ -219,7 +221,7 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
                         setAuthOpen(true);
                         closeMenu();
                       }}
-                      className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
+                      className="w-full rounded-full bg-gradient-to-r from-cyber-blue to-cyber-purple hover:shadow-cyber-glow"
                     >
                       Get Started
                     </Button>
@@ -230,7 +232,7 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
                         setAuthOpen(true);
                         closeMenu();
                       }}
-                      className="w-full"
+                      className="w-full rounded-full border-white/20 hover:bg-white/5"
                     >
                       Sign In
                     </Button>
@@ -242,7 +244,7 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
                   <Link
                     to="/"
                     onClick={closeMenu}
-                    className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted transition-colors"
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors"
                   >
                     <Home className="w-5 h-5 text-muted-foreground" />
                     <span>Home</span>
@@ -253,27 +255,27 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
                       onSearchOpen?.();
                       closeMenu();
                     }}
-                    className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted transition-colors text-left"
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors text-left"
                   >
                     <Search className="w-5 h-5 text-muted-foreground" />
                     <span>Search</span>
-                    <kbd className="ml-auto text-xs text-muted-foreground">⌘K</kbd>
+                    <kbd className="ml-auto text-xs text-muted-foreground bg-white/5 px-2 py-0.5 rounded">⌘K</kbd>
                   </button>
 
                   <Link
                     to="/kits"
                     onClick={closeMenu}
-                    className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted transition-colors"
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors"
                   >
-                    <Sparkles className="w-5 h-5 text-orange-500" />
+                    <Sparkles className="w-5 h-5 text-cyber-blue" />
                     <span>Stack Kits</span>
-                    <span className="ml-auto text-xs text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded">New</span>
+                    <span className="ml-auto text-xs text-cyber-blue bg-cyber-blue/10 px-2 py-0.5 rounded-full">New</span>
                   </Link>
 
                   <Link
                     to="/leaderboard"
                     onClick={closeMenu}
-                    className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted transition-colors"
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors"
                   >
                     <TrendingUp className="w-5 h-5 text-muted-foreground" />
                     <span>Leaderboard</span>
@@ -284,15 +286,15 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
                       <Link
                         to="/saved"
                         onClick={closeMenu}
-                        className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted transition-colors"
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors"
                       >
-                        <BookmarkCheck className="w-5 h-5 text-violet-500" />
+                        <BookmarkCheck className="w-5 h-5 text-cyber-purple" />
                         <span>Saved Stacks</span>
                       </Link>
                       <Link
                         to="/dashboard"
                         onClick={closeMenu}
-                        className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted transition-colors"
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors"
                       >
                         <Settings className="w-5 h-5 text-muted-foreground" />
                         <span>Dashboard</span>
@@ -300,12 +302,12 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
                     </>
                   )}
 
-                  <div className="my-4 border-t border-border" />
+                  <div className="my-4 border-t border-white/10" />
 
                   <Link
                     to="/about"
                     onClick={closeMenu}
-                    className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted transition-colors"
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors"
                   >
                     <Info className="w-5 h-5 text-muted-foreground" />
                     <span>About</span>
@@ -314,7 +316,7 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
                   <Link
                     to="/contact"
                     onClick={closeMenu}
-                    className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted transition-colors"
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors"
                   >
                     <Mail className="w-5 h-5 text-muted-foreground" />
                     <span>Contact Us</span>
@@ -323,7 +325,7 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
                   <Link
                     to="/support"
                     onClick={closeMenu}
-                    className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted transition-colors"
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors"
                   >
                     <LifeBuoy className="w-5 h-5 text-muted-foreground" />
                     <span>Raise a Ticket</span>
@@ -333,10 +335,10 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
 
               {/* Footer - Sign Out */}
               {user && !authLoading && (
-                <div className="p-4 border-t border-border">
+                <div className="p-4 border-t border-white/10">
                   <Button
                     variant="ghost"
-                    className="w-full justify-start gap-3 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    className="w-full justify-start gap-3 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-lg"
                     onClick={() => {
                       signOut();
                       closeMenu();

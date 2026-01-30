@@ -56,6 +56,14 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        cyber: {
+          blue: "#00A3FF",
+          purple: "#8B5CF6",
+        },
+        silver: {
+          DEFAULT: "#E2E8F0",
+          dark: "#CBD5E1",
+        },
         neon: {
           purple: "hsl(var(--neon-purple))",
           blue: "hsl(var(--electric-blue))",
@@ -93,16 +101,24 @@ export default {
           "0%": { transform: "rotate(0deg)" },
           "100%": { transform: "rotate(360deg)" },
         },
+        float: {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-20px)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         shimmer: "shimmer 2s linear infinite",
         "border-spin": "border-spin 3s linear infinite",
+        float: "float 6s ease-in-out infinite",
+        "float-slow": "float 8s ease-in-out infinite",
+        "float-slower": "float 12s ease-in-out infinite",
       },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
         "grid-pattern": "linear-gradient(to right, hsl(var(--border-subtle)) 1px, transparent 1px), linear-gradient(to bottom, hsl(var(--border-subtle)) 1px, transparent 1px)",
+        "gradient-cyber": "linear-gradient(135deg, #00A3FF 0%, #8B5CF6 100%)",
       },
     },
   },

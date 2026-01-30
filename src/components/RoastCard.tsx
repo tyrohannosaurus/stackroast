@@ -66,17 +66,17 @@ export function RoastCard({ stack }: RoastCardProps) {
   };
 
   return (
-    <Card
+    <div
       onClick={() => navigate(`/stack/${stack.slug}`)}
-      className="p-6 bg-surface/50 border-white/10 hover:border-orange-500/50 transition-all cursor-pointer group"
+      className="glass-card p-6 cursor-pointer group"
     >
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
-          <h3 className="text-xl font-bold mb-1 group-hover:text-orange-400 transition-colors">
+          <h3 className="text-xl font-bold mb-1 group-hover:text-cyber-blue transition-colors tracking-tight">
             {stack.name}
           </h3>
-          <div className="flex items-center gap-2 text-sm text-zinc-500">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span>by @{stack.profiles?.username || "anonymous"}</span>
             <span>•</span>
             <span>{formatDistanceToNow(new Date(stack.created_at), { addSuffix: true })}</span>
@@ -86,11 +86,11 @@ export function RoastCard({ stack }: RoastCardProps) {
         {/* Burn Score Badge */}
         {stack.ai_roasts && (
           <div className="flex flex-col items-center">
-            <Flame className="w-6 h-6 text-orange-400 mb-1" />
-            <span className="text-2xl font-bold text-orange-400">
+            <Flame className="w-6 h-6 text-cyber-blue mb-1" />
+            <span className="text-2xl font-bold text-gradient-cyber">
               {stack.ai_roasts.burn_score}
             </span>
-            <span className="text-xs text-zinc-500">/ 100</span>
+            <span className="text-xs text-muted-foreground">/ 100</span>
           </div>
         )}
       </div>
@@ -103,20 +103,20 @@ export function RoastCard({ stack }: RoastCardProps) {
               key={idx}
               src={logo}
               alt=""
-              className="w-8 h-8 rounded border border-zinc-800"
+              className="w-8 h-8 rounded-lg border border-white/10"
             />
           ))}
           {stack.tool_preview.length >= 4 && (
-            <span className="text-sm text-zinc-500">+more</span>
+            <span className="text-sm text-muted-foreground">+more</span>
           )}
         </div>
       )}
 
       {/* AI Roast Preview */}
       {stack.ai_roasts ? (
-        <div className="bg-gradient-to-br from-orange-500/10 to-red-500/10 border border-orange-500/20 rounded-lg p-4 mb-4">
+        <div className="glass-surface rounded-xl p-4 mb-4">
           <div className="flex items-start gap-2 mb-2">
-            <Badge variant="secondary" className="text-xs">
+            <Badge variant="secondary" className="text-xs bg-white/5 border-white/10">
               {stack.ai_roasts.persona === "vc_bro"
                 ? "The VC Bro"
                 : stack.ai_roasts.persona === "rust_evangelist"
@@ -124,13 +124,13 @@ export function RoastCard({ stack }: RoastCardProps) {
                 : "The Senior Dev"}
             </Badge>
           </div>
-          <p className="text-sm text-zinc-300 line-clamp-2 italic">
+          <p className="text-sm text-muted-foreground line-clamp-2 italic leading-relaxed">
             "{stack.ai_roasts.roast_text}"
           </p>
         </div>
       ) : (
-        <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4 mb-4">
-          <p className="text-sm text-zinc-500 italic">
+        <div className="glass-surface rounded-xl p-4 mb-4">
+          <p className="text-sm text-muted-foreground italic">
             Awaiting AI roast...
           </p>
         </div>
@@ -138,7 +138,7 @@ export function RoastCard({ stack }: RoastCardProps) {
 
       {/* Stats Footer with Quick Upvote */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4 text-sm text-zinc-500">
+        <div className="flex items-center gap-4 text-sm text-muted-foreground">
           <div className="flex items-center gap-1">
             <Flame className="w-4 h-4" />
             <span>{stack.community_roasts_count} roasts</span>
@@ -158,14 +158,14 @@ export function RoastCard({ stack }: RoastCardProps) {
           variant="ghost"
           size="sm"
           onClick={handleQuickUpvote}
-          className={`${
-            upvoted ? "text-orange-400" : "text-zinc-500 hover:text-orange-400"
+          className={`rounded-full ${
+            upvoted ? "text-cyber-blue" : "text-muted-foreground hover:text-cyber-blue"
           } transition-colors`}
         >
           <ArrowUp className={`w-4 h-4 mr-1 ${upvoted ? "fill-current" : ""}`} />
           {localUpvotes}
         </Button>
       </div>
-    </Card>
+    </div>
   );
 }

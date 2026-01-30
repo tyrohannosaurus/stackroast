@@ -4,147 +4,137 @@
 @tailwind components;
 @tailwind utilities;
 
-/* StackRoast Design System - Fire & Ash Theme */
+/* StackRoast Design System - Minimalist Glassmorphism */
 
 @layer base {
   :root {
-    /* Base: Zinc (Ash) - Zinc-950 */
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
+    /* Base: Deep Charcoal - Near Black */
+    --background: 240 10% 2%;
+    --foreground: 210 20% 98%;
     
-    /* Card: Zinc-900 (Charcoal) */
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
+    /* Card: Glass Surfaces */
+    --card: 240 10% 4%;
+    --card-foreground: 210 20% 98%;
+    --popover: 240 10% 4%;
+    --popover-foreground: 210 20% 98%;
     
-    /* Primary: Electric Orange (Magma) - Orange-500 */
-    --primary: 24.6 95% 53.1%;
-    --primary-foreground: 60 9.1% 97.8%;
+    /* Primary: Cyber Blue */
+    --primary: 200 100% 50%;
+    --primary-foreground: 210 20% 98%;
     
-    /* Secondary: Deep Zinc */
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
+    /* Secondary: Cool Silver */
+    --secondary: 214 32% 91%;
+    --secondary-foreground: 240 10% 4%;
     
-    /* Muted: Ash Grey */
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
+    /* Muted: Subtle Gray */
+    --muted: 240 6% 10%;
+    --muted-foreground: 215 20% 65%;
     
-    /* Accent: Hot Orange highlight */
-    --accent: 24 95% 53%;
-    --accent-foreground: 0 0% 98%;
+    /* Accent: Cyber Blue highlight */
+    --accent: 200 100% 50%;
+    --accent-foreground: 210 20% 98%;
     
-    /* Destructive: Red (for "Roast" actions) */
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
+    /* Destructive: Soft Red */
+    --destructive: 0 62.8% 45%;
+    --destructive-foreground: 210 20% 98%;
     
     /* Borders & Focus */
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 24.6 95% 53.1%; /* Focus rings are now orange */
+    --border: 0 0% 100% / 0.08;
+    --input: 0 0% 100% / 0.08;
+    --ring: 200 100% 50%;
     
     --radius: 0.75rem;
     
-    /* Custom StackRoast Tokens */
-    --canvas: 240 10% 3.9%; /* Zinc-950 */
-    --surface: 240 5.9% 10%; /* Zinc-900 */
-    --surface-glass: 240 5.9% 10% / 0.5;
-    --border-subtle: 0 0% 100% / 0.1; /* Linear-style glass border */
-    --border-active: 240 3.7% 15.9%;
-    --text-primary: 240 4.8% 95.9%; /* Zinc-100 - crisp headings */
-    --text-secondary: 240 5.2% 63.9%; /* Zinc-400 - smoke/ash body text */
-    --accent-glow: 24.6 95% 53.1% / 0.2; /* Orange glow */
-    --fire-orange: 24.6 95% 53.1%; /* Orange-500 */
-    --fire-red: 0 84.2% 60.2%; /* Red-500 */
-    --ember-amber: 37.7 92.1% 50.2%; /* Amber-500 */
+    /* Custom Glassmorphism Tokens */
+    --canvas: 240 10% 2%;
+    --surface: 0 0% 100% / 0.03;
+    --surface-glass: 0 0% 100% / 0.03;
+    --border-subtle: 0 0% 100% / 0.1;
+    --border-active: 0 0% 100% / 0.2;
+    --text-primary: 210 20% 98%;
+    --text-secondary: 215 20% 65%;
+    --accent-glow: 200 100% 50% / 0.2;
     
-    /* Gradients - Fire gradient for primary actions */
-    --gradient-glow: linear-gradient(135deg, hsl(24.6 95% 53.1% / 0.3) 0%, hsl(0 84.2% 60.2% / 0.3) 100%);
-    --gradient-border: linear-gradient(135deg, hsl(24.6 95% 53.1%), hsl(0 84.2% 60.2%), hsl(24.6 95% 53.1%));
-    --gradient-fire: linear-gradient(135deg, hsl(24.6 95% 53.1%) 0%, hsl(0 84.2% 60.2%) 100%);
+    /* Cyber Colors */
+    --cyber-blue: 200 100% 50%;
+    --cool-silver: 214 32% 91%;
+    --neon-purple: 265 90% 65%;
+    --electric-blue: 220 100% 60%;
     
-    /* Shadows - Hot orange glow */
-    --shadow-glow: 0 0 20px hsl(24.6 95% 53.1% / 0.5);
-    --shadow-card: 0 4px 30px hsl(0 0% 0% / 0.3);
+    /* Gradients - Cyber gradient for primary actions */
+    --gradient-glow: linear-gradient(135deg, hsl(200 100% 50% / 0.2) 0%, hsl(265 90% 65% / 0.2) 100%);
+    --gradient-border: linear-gradient(135deg, hsl(200 100% 50%), hsl(265 90% 65%), hsl(200 100% 50%));
+    --gradient-cyber: linear-gradient(135deg, hsl(200 100% 50%) 0%, hsl(265 90% 65%) 100%);
+    --gradient-text: linear-gradient(to right, hsl(0 0% 100%), hsl(215 20% 65%));
     
-    /* Sidebar (keeping for compatibility) */
-    --sidebar-background: 240 10% 3.9%;
-    --sidebar-foreground: 240 5% 64.9%;
-    --sidebar-primary: 24.6 95% 53.1%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 0 0% 100% / 0.1;
-    --sidebar-ring: 24.6 95% 53.1%;
+    /* Shadows - Soft cyber glow */
+    --shadow-glow: 0 0 30px hsl(200 100% 50% / 0.3);
+    --shadow-card: 0 8px 32px hsl(0 0% 0% / 0.3);
+    
+    /* Sidebar */
+    --sidebar-background: 240 10% 2%;
+    --sidebar-foreground: 215 20% 65%;
+    --sidebar-primary: 200 100% 50%;
+    --sidebar-primary-foreground: 210 20% 98%;
+    --sidebar-accent: 0 0% 100% / 0.05;
+    --sidebar-accent-foreground: 210 20% 98%;
+    --sidebar-border: 0 0% 100% / 0.08;
+    --sidebar-ring: 200 100% 50%;
   }
 
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 24.6 95% 53.1%;
-    --primary-foreground: 60 9.1% 97.8%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 24 95% 53%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 24.6 95% 53.1%;
+    --background: 240 10% 2%;
+    --foreground: 210 20% 98%;
+    --card: 240 10% 4%;
+    --card-foreground: 210 20% 98%;
+    --popover: 240 10% 4%;
+    --popover-foreground: 210 20% 98%;
+    --primary: 200 100% 50%;
+    --primary-foreground: 210 20% 98%;
+    --secondary: 214 32% 91%;
+    --secondary-foreground: 240 10% 4%;
+    --muted: 240 6% 10%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 200 100% 50%;
+    --accent-foreground: 210 20% 98%;
+    --destructive: 0 62.8% 45%;
+    --destructive-foreground: 210 20% 98%;
+    --border: 0 0% 100% / 0.08;
+    --input: 0 0% 100% / 0.08;
+    --ring: 200 100% 50%;
     
-    /* Custom StackRoast Tokens - Dark */
-    --canvas: 240 10% 3.9%;
-    --surface: 240 5.9% 10%;
-    --surface-glass: 240 5.9% 10% / 0.5;
+    /* Custom Tokens - Dark */
+    --canvas: 240 10% 2%;
+    --surface: 0 0% 100% / 0.03;
+    --surface-glass: 0 0% 100% / 0.03;
     --border-subtle: 0 0% 100% / 0.1;
-    --text-primary: 240 4.8% 95.9%;
-    --text-secondary: 240 5.2% 63.9%;
+    --text-primary: 210 20% 98%;
+    --text-secondary: 215 20% 65%;
   }
 
   .light {
-    /* Base: Elegant Warm White */
+    /* Light mode - keeping elegant white theme */
     --background: 0 0% 99%;
     --foreground: 222 47% 11%;
-    
-    /* Card: Pure White with subtle warmth */
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
-    
-    /* Primary: Electric Orange (Magma) - stays vibrant */
-    --primary: 24.6 95% 53.1%;
+    --primary: 200 100% 45%;
     --primary-foreground: 0 0% 100%;
-    
-    /* Secondary: Soft Neutral Gray */
     --secondary: 240 5% 96%;
     --secondary-foreground: 222 47% 11%;
-    
-    /* Muted: Elegant Gray */
     --muted: 240 5% 96%;
     --muted-foreground: 215 16% 47%;
-    
-    /* Accent: Hot Orange */
-    --accent: 24 95% 53%;
+    --accent: 200 100% 45%;
     --accent-foreground: 0 0% 100%;
-    
-    /* Destructive: Red */
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
-    
-    /* Borders & Focus - Refined */
     --border: 214 32% 91%;
     --input: 214 32% 91%;
-    --ring: 24.6 95% 53.1%;
+    --ring: 200 100% 45%;
     
-    /* Custom StackRoast Tokens - Elegant Light */
+    /* Custom Tokens - Light */
     --canvas: 240 5% 97%;
     --surface: 0 0% 100%;
     --surface-glass: 0 0% 100% / 0.9;
@@ -152,23 +142,21 @@
     --border-active: 214 32% 91%;
     --text-primary: 222 47% 11%;
     --text-secondary: 215 16% 47%;
-    --accent-glow: 24.6 95% 53.1% / 0.12;
+    --accent-glow: 200 100% 45% / 0.12;
     
-    /* Shadows - Elegant and Soft */
-    --shadow-glow: 0 0 24px hsl(24.6 95% 53.1% / 0.25);
+    /* Shadows - Light Mode */
+    --shadow-glow: 0 0 24px hsl(200 100% 45% / 0.25);
     --shadow-card: 0 1px 3px hsl(0 0% 0% / 0.1), 0 1px 2px hsl(0 0% 0% / 0.06);
-    --shadow-card-hover: 0 4px 6px hsl(0 0% 0% / 0.1), 0 2px 4px hsl(0 0% 0% / 0.06);
-    --shadow-card-lg: 0 10px 15px hsl(0 0% 0% / 0.1), 0 4px 6px hsl(0 0% 0% / 0.05);
     
     /* Sidebar - Light */
     --sidebar-background: 0 0% 99%;
     --sidebar-foreground: 215 16% 47%;
-    --sidebar-primary: 24.6 95% 53.1%;
+    --sidebar-primary: 200 100% 45%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 5% 96%;
     --sidebar-accent-foreground: 222 47% 11%;
     --sidebar-border: 0 0% 0% / 0.08;
-    --sidebar-ring: 24.6 95% 53.1%;
+    --sidebar-ring: 200 100% 45%;
   }
 }
 
@@ -183,10 +171,16 @@
   
   body {
     @apply bg-canvas text-foreground antialiased;
+    background-color: hsl(240 10% 2%);
   }
   
   h1, h2, h3, h4, h5, h6 {
-    @apply tracking-tight font-medium;
+    @apply font-bold;
+    letter-spacing: -0.05em;
+  }
+  
+  p {
+    line-height: 1.7;
   }
   
   code, pre, .font-mono {
@@ -195,16 +189,38 @@
 }
 
 @layer components {
+  /* Glass Surface - Core Component */
   .glass-surface {
-    @apply bg-surface-glass backdrop-blur-md border border-border-subtle rounded-xl;
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
   }
   
   .glass-nav {
-    @apply bg-surface-glass/80 backdrop-blur-xl border-b border-border-subtle;
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  
+  .glass-card {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+    transition: all 0.3s ease;
+  }
+  
+  .glass-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.15);
   }
   
   .glow-accent {
-    box-shadow: var(--shadow-glow);
+    box-shadow: 0 0 30px hsl(200 100% 50% / 0.3);
   }
   
   .gradient-border {
@@ -219,17 +235,56 @@
     animation: gradient-shift 3s ease infinite;
   }
   
+  /* New Text Gradient - White to Gray */
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500;
+    background: linear-gradient(to right, #ffffff, #94a3b8);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
   }
   
+  .text-gradient-cyber {
+    background: linear-gradient(135deg, #00A3FF, #8B5CF6);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  
+  /* Pill Button - Ghost Style */
+  .btn-pill {
+    @apply px-6 py-2.5 rounded-full font-medium text-sm transition-all duration-300;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: hsl(210 20% 98%);
+  }
+  
+  .btn-pill:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0 20px rgba(0, 163, 255, 0.2);
+  }
+  
+  /* Solid Silver Button */
+  .btn-silver {
+    @apply px-6 py-2.5 rounded-full font-medium text-sm transition-all duration-300;
+    background: linear-gradient(135deg, #E2E8F0, #CBD5E1);
+    color: hsl(240 10% 4%);
+  }
+  
+  .btn-silver:hover {
+    box-shadow: 0 0 25px rgba(226, 232, 240, 0.4);
+    transform: translateY(-1px);
+  }
+  
+  /* Legacy btn-fire replacement */
   .btn-fire {
-    @apply bg-gradient-to-r from-orange-500 to-red-500;
-    box-shadow: 0 0 20px rgba(249, 115, 22, 0.5);
+    @apply px-6 py-2.5 rounded-full font-medium text-sm transition-all duration-300;
+    background: linear-gradient(135deg, #00A3FF, #0091EA);
+    box-shadow: 0 0 20px rgba(0, 163, 255, 0.4);
   }
   
   .btn-fire:hover {
-    box-shadow: 0 0 30px rgba(249, 115, 22, 0.7);
+    box-shadow: 0 0 30px rgba(0, 163, 255, 0.6);
   }
 
   /* Light Mode Card Enhancements */
@@ -242,15 +297,6 @@
   .light [class*="Card"]:hover:not(.no-shadow) {
     box-shadow: 0 4px 6px hsl(0 0% 0% / 0.1), 0 2px 4px hsl(0 0% 0% / 0.06);
   }
-
-  /* Light Mode Border Enhancements */
-  .light .border-elegant {
-    border-color: hsl(214 32% 91%);
-  }
-
-  .light .border-elegant-hover:hover {
-    border-color: hsl(24.6 95% 53.1%);
-  }
 }
 
 @layer utilities {
@@ -258,21 +304,25 @@
     animation: float 6s ease-in-out infinite;
   }
   
+  .animate-float-slow {
+    animation: float 8s ease-in-out infinite;
+  }
+  
+  .animate-float-slower {
+    animation: float 12s ease-in-out infinite;
+  }
+  
   .animate-pulse-glow {
     animation: pulse-glow 2s ease-in-out infinite;
   }
 
-  /* Shadow utilities for light mode */
+  /* Shadow utilities */
   .shadow-elegant {
     box-shadow: 0 1px 3px hsl(0 0% 0% / 0.1), 0 1px 2px hsl(0 0% 0% / 0.06);
   }
 
-  .shadow-elegant-hover {
-    box-shadow: 0 4px 6px hsl(0 0% 0% / 0.1), 0 2px 4px hsl(0 0% 0% / 0.06);
-  }
-
-  .shadow-elegant-lg {
-    box-shadow: 0 10px 15px hsl(0 0% 0% / 0.1), 0 4px 6px hsl(0 0% 0% / 0.05);
+  .shadow-cyber-glow {
+    box-shadow: 0 0 30px rgba(0, 163, 255, 0.3);
   }
 }
 
@@ -283,31 +333,68 @@
 
 @keyframes float {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+  50% { transform: translateY(-20px); }
 }
 
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 20px hsl(24.6 95% 53.1% / 0.2); }
-  50% { box-shadow: 0 0 40px hsl(24.6 95% 53.1% / 0.4); }
+  0%, 100% { box-shadow: 0 0 20px hsl(200 100% 50% / 0.2); }
+  50% { box-shadow: 0 0 40px hsl(200 100% 50% / 0.4); }
 }
 
-/* TypeAnimation text styling - force orange gradient */
+/* TypeAnimation text styling - Cyber Blue gradient */
 .hero-typewriter span {
-  background: linear-gradient(to right, #f97316, #ef4444) !important;
+  background: linear-gradient(to right, #00A3FF, #8B5CF6) !important;
   -webkit-background-clip: text !important;
   background-clip: text !important;
   -webkit-text-fill-color: transparent !important;
 }
 
-/* TypeAnimation cursor fix - make the blinking cursor visible */
+/* TypeAnimation cursor fix */
 .hero-typewriter .type-animation-cursor,
 .hero-typewriter > span > span:last-child,
 .hero-typewriter span[style*="border-right"],
 .hero-typewriter span::after {
-  color: #f97316 !important;
-  -webkit-text-fill-color: #f97316 !important;
+  color: #00A3FF !important;
+  -webkit-text-fill-color: #00A3FF !important;
   background: none !important;
   -webkit-background-clip: unset !important;
   background-clip: unset !important;
-  border-color: #f97316 !important;
+  border-color: #00A3FF !important;
+}
+
+/* Ambient Background Blobs */
+.ambient-blob {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(100px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.ambient-blob-1 {
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(0, 163, 255, 0.08) 0%, transparent 70%);
+  top: -200px;
+  right: -200px;
+  animation: float 12s ease-in-out infinite;
+}
+
+.ambient-blob-2 {
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.06) 0%, transparent 70%);
+  bottom: -150px;
+  left: -150px;
+  animation: float 15s ease-in-out infinite reverse;
+}
+
+.ambient-blob-3 {
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(0, 163, 255, 0.05) 0%, transparent 70%);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation: float 10s ease-in-out infinite;
 }

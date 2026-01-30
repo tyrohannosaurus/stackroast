@@ -53,18 +53,18 @@ export function RecommendationCard({
   const getTypeStyles = () => {
     switch (rec.type) {
       case 'budget':
-        return 'from-green-500/5 to-emerald-500/5 border-green-500/20';
+        return 'glass-card border-green-500/20';
       case 'missing':
-        return 'from-blue-500/5 to-cyan-500/5 border-blue-500/20';
+        return 'glass-card border-cyber-blue/20';
       case 'replacement':
         return rec.isSponsored
-          ? 'from-violet-500/10 to-purple-500/10 border-violet-500/30'
-          : 'from-card to-card border-border';
+          ? 'glass-card border-cyber-purple/30'
+          : 'glass-card';
     }
   };
 
   return (
-    <div className={`p-4 rounded-lg border bg-gradient-to-br ${getTypeStyles()}`}>
+    <div className={`p-4 rounded-xl ${getTypeStyles()}`}>
       <div className="flex items-start gap-4">
           <ToolLogo
             src={toolData?.logo_url}
@@ -83,13 +83,13 @@ export function RecommendationCard({
                 </>
               )}
               {rec.severity && (
-                <Badge variant="outline" className={getSeverityColor(rec.severity)}>
+                <Badge variant="outline" className={`${getSeverityColor(rec.severity)} rounded-full`}>
                   {getSeverityIcon(rec.severity)}
                   <span className="ml-1 capitalize">{rec.severity}</span>
                 </Badge>
               )}
               {rec.contextScore && (
-                <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/30 text-xs">
+                <Badge variant="outline" className="bg-cyber-blue/10 text-cyber-blue border-cyber-blue/30 text-xs rounded-full">
                   Fit: {rec.contextScore}/100
                 </Badge>
               )}
@@ -98,9 +98,9 @@ export function RecommendationCard({
                 <UrgencyBadge type={getUrgencyType({ name: rec.toolName })!} />
               )}
             </div>
-            <p className="text-sm text-muted-foreground mb-3">{rec.reason}</p>
+            <p className="text-sm text-muted-foreground mb-3 leading-relaxed">{rec.reason}</p>
             {rec.tradeoffs && rec.tradeoffs.length > 0 && (
-              <div className="mb-3 p-2 bg-amber-500/10 rounded border border-amber-500/20">
+              <div className="mb-3 p-3 glass-surface rounded-lg border border-amber-500/20">
                 <div className="flex items-center gap-2 mb-1">
                   <AlertTriangle className="w-3 h-3 text-amber-500" />
                   <span className="text-xs font-medium text-foreground">Consider before switching:</span>
@@ -128,14 +128,13 @@ export function RecommendationCard({
           <div className="flex flex-col gap-2 shrink-0">
             <Button
               size="default"
-              variant={rec.isSponsored ? 'default' : 'default'}
-              className={
+              className={`rounded-full ${
                 rec.isSponsored
-                  ? 'bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600 text-white font-semibold shadow-lg shadow-violet-500/25'
+                  ? 'bg-gradient-to-r from-cyber-purple to-cyber-blue hover:shadow-cyber-glow text-white font-semibold'
                   : rec.type === 'budget'
-                  ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold shadow-lg shadow-green-500/25'
-                  : 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold shadow-lg shadow-orange-500/25'
-              }
+                  ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:shadow-[0_0_20px_rgba(16,185,129,0.4)] text-white font-semibold'
+                  : 'bg-gradient-to-r from-cyber-blue to-cyber-purple hover:shadow-cyber-glow text-white font-semibold'
+              }`}
               onClick={() =>
                 onAlternativeClick(
                   rec.currentTool || '',
@@ -158,7 +157,7 @@ export function RecommendationCard({
             </Button>
             {/* Social proof micro-copy */}
             {rec.contextScore && rec.contextScore >= 80 && (
-              <div className="flex items-center justify-center gap-1 text-xs text-violet-500 font-medium">
+              <div className="flex items-center justify-center gap-1 text-xs text-cyber-blue font-medium">
                 <Zap className="w-3 h-3" />
                 <span>{rec.contextScore}% match</span>
               </div>

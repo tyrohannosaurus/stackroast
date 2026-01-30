@@ -8,6 +8,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Navbar } from "@/components/Navbar";
 import { GlobalSearch } from "@/components/GlobalSearch";
 import { CommandPalette } from "@/components/CommandPalette";
+import { AmbientBackground } from "@/components/AmbientBackground";
 import Index from "./pages/Index";
 import Stack from "./pages/Stack";
 import Dashboard from "./pages/Dashboard";
@@ -45,6 +46,7 @@ function App() {
           <AuthProvider>
             <BrowserRouter>
               <ErrorBoundary>
+                <AmbientBackground />
                 <Navbar onSearchOpen={() => setSearchOpen(true)} />
                 <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
                 <CommandPalette onOpenSearch={() => setSearchOpen(true)} />

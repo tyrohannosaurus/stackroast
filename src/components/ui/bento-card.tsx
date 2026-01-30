@@ -33,14 +33,12 @@ export function BentoCard({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ scale: 1.01, borderColor: "rgba(255,255,255,0.2)" }}
+      whileHover={{ scale: 1.01, borderColor: "rgba(255,255,255,0.15)" }}
       transition={{ duration: 0.2, ease: "easeOut" }}
       className={cn(
         "relative overflow-hidden rounded-xl",
-        "bg-surface-glass backdrop-blur-md",
-        "border border-white/5",
-        "transition-all duration-300",
-        glowOnHover && "hover:shadow-[0_0_30px_rgba(139,92,246,0.15)]",
+        "glass-card",
+        glowOnHover && "hover:shadow-cyber-glow",
         colSpanClass,
         rowSpanClass,
         className

@@ -83,20 +83,20 @@ function StackCardPreviewComponent({ stack }: StackCardPreviewProps) {
   };
 
   return (
-    <Card 
-      className="p-4 bg-card border-border hover:border-orange-500/50 transition-all cursor-pointer group"
+    <div 
+      className="glass-card p-5 cursor-pointer group"
       onClick={handleCardClick}
     >
       {/* Header */}
-      <div className="flex items-start gap-3 mb-3">
-        <Avatar className="w-8 h-8">
+      <div className="flex items-start gap-3 mb-4">
+        <Avatar className="w-9 h-9 ring-1 ring-white/10">
           <AvatarImage src={stack.user.avatar_url} alt={stack.user.username} />
-          <AvatarFallback>{stack.user.username[0]?.toUpperCase()}</AvatarFallback>
+          <AvatarFallback className="bg-white/5 text-sm">{stack.user.username[0]?.toUpperCase()}</AvatarFallback>
         </Avatar>
         <div className="flex-1 min-w-0">
           <Link
             to={`/user/${stack.user.username}`}
-            className="font-medium text-sm hover:text-orange-500 transition-colors"
+            className="font-medium text-sm hover:text-cyber-blue transition-colors"
           >
             @{stack.user.username}
           </Link>
@@ -105,15 +105,15 @@ function StackCardPreviewComponent({ stack }: StackCardPreviewProps) {
           </p>
         </div>
         <div className="text-right">
-          <div className="text-lg font-bold text-gradient">
+          <div className="text-lg font-bold text-gradient-cyber">
             {stack.burn_score}
           </div>
         </div>
       </div>
 
       {/* Roast Preview */}
-      <div className="bg-muted/50 rounded-lg p-3 mb-3 border border-border">
-        <p className="text-sm text-muted-foreground line-clamp-2">
+      <div className="glass-surface rounded-lg p-4 mb-4">
+        <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
           {previewText}
         </p>
       </div>
@@ -156,7 +156,7 @@ function StackCardPreviewComponent({ stack }: StackCardPreviewProps) {
             variant="ghost" 
             size="sm" 
             asChild
-            className="group-hover:text-orange-500 transition-colors"
+            className="group-hover:text-cyber-blue transition-colors rounded-full"
           >
             <Link to={`/stack/${stack.slug}`}>
               View Full <ArrowRight className="w-3 h-3 ml-1" />
@@ -164,7 +164,7 @@ function StackCardPreviewComponent({ stack }: StackCardPreviewProps) {
           </Button>
         </div>
       </div>
-    </Card>
+    </div>
   );
 }
 
