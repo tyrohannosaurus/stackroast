@@ -350,10 +350,10 @@ export function parseGitHubUrl(url: string): { owner: string; repo: string } | n
   try {
     GitHubUrlSchema.parse(url);
     const match = url.match(/github\.com\/([^\/]+)\/([^\/]+)/);
-    if (!match) return null;
+    if (!match || !match[1] || !match[2]) return null;
 
-    const [, owner, repo] = match;
-    const repoName = repo.replace(/\.git$/, ""); // Remove .git suffix if present
+    const owner = match[1];
+    const repoName = match[2].replace(/\.git$/, ""); // Remove .git suffix if present
 
     // Block path traversal attempts
     if (owner.includes('..') || repoName.includes('..') ||
@@ -362,7 +362,7 @@ export function parseGitHubUrl(url: string): { owner: string; repo: string } | n
     }
 
     // Validate parsed values
-    const validated = GitHubRepoSchema.parse({ owner: owner || '', repo: repoName || '' });
+    const validated = GitHubRepoSchema.parse({ owner, repo: repoName }) as { owner: string; repo: string };
     return validated;
   } catch {
     return null;

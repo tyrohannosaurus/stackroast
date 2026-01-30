@@ -193,8 +193,7 @@ export default function RoastMe() {
       await supabase.from('stack_items').insert(stackItems);
 
       // Generate AI roast
-      const toolNames = selectedTools.map(t => ({ name: t.name, category: t.category || '' }));
-      const roastResult = await generateRoast(toolNames as any, stackName, persona) as any;
+      const roastResult = await generateRoast(stackName, selectedTools, persona) as any;
 
       if (roastResult) {
         setRoastText(roastResult.roast || roastResult.roastText);
