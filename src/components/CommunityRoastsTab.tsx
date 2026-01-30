@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { LoadingFire } from "@/components/LoadingFire";
 import { Flame, ArrowUp, ArrowDown, Award, TrendingUp, MessageCircle, Send, ChevronDown, ChevronUp } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import type { RoastCommentWithProfile, CommunityRoastWithProfile, CommunityRoastWithStats, SupabaseError } from "@/types/database";
+import type { CommunityRoastWithProfile, CommunityRoastWithStats, SupabaseError, CommunityRoast, RoastComment } from "@/types/database";
 
 interface CommunityRoastsTabProps {
   stackId: string;
@@ -61,6 +61,7 @@ export function CommunityRoastsTab({ stackId }: CommunityRoastsTabProps) {
       // Ensure upvotes and downvotes are always numbers and map to expected format
       const normalizedData: CommunityRoastWithProfile[] = (data || []).map((roast: CommunityRoastWithStats) => ({
         id: roast.id,
+        stack_id: roast.stack_id,
         user_id: roast.user_id,
         roast_text: roast.roast_content,
         upvotes: roast.upvotes ?? 0,
@@ -115,7 +116,7 @@ export function CommunityRoastsTab({ stackId }: CommunityRoastsTabProps) {
 
     setRoasts(prev => prev.map(roast => 
       roast.id === roastId 
-        ? { ...roast, comments: data as RoastComment[] }
+        ? { ...roast, comments: data as (RoastComment & { profiles: { username: string; avatar_url?: string } })[] }
         : roast
     ));
   };
@@ -250,7 +251,7 @@ export function CommunityRoastsTab({ stackId }: CommunityRoastsTabProps) {
     }
   };
 
-  const getScore = (roast: CommunityRoast) => {
+  const getScore = (roast: CommunityRoastWithProfile) => {
     const upvotes = roast.upvotes ?? 0;
     const downvotes = roast.downvotes ?? 0;
     const score = upvotes - downvotes;

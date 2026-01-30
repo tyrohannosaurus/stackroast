@@ -362,7 +362,7 @@ export function parseGitHubUrl(url: string): { owner: string; repo: string } | n
     }
 
     // Validate parsed values
-    const validated = GitHubRepoSchema.parse({ owner, repo: repoName });
+    const validated = GitHubRepoSchema.parse({ owner: owner || '', repo: repoName || '' });
     return validated;
   } catch {
     return null;

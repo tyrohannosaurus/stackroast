@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { Plus, Flame } from 'lucide-react';
 import { SubmitStackDialog } from '@/components/SubmitStackDialog';
 

@@ -39,7 +39,7 @@ export function GlobalSearch({ open: controlledOpen, onOpenChange }: GlobalSearc
     const down = (e: KeyboardEvent) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
-        setOpen((prev) => !prev);
+        setOpen(!open);
       }
     };
 

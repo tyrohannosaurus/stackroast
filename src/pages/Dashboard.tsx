@@ -89,10 +89,11 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (profile) {
-      setUsername(profile.username || '');
-      setBio(profile.bio || '');
-      setGithubUrl(profile.github_url || '');
-      setTwitterHandle(profile.twitter_handle || '');
+      const p = profile as any;
+      setUsername(p.username || '');
+      setBio(p.bio || '');
+      setGithubUrl(p.github_url || '');
+      setTwitterHandle(p.twitter_handle || '');
     }
   }, [profile]);
 

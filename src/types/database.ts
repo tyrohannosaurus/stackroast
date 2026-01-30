@@ -13,6 +13,8 @@ export interface Profile {
   bio?: string;
   avatar_url?: string;
   karma_points: number;
+  github_url?: string;
+  twitter_handle?: string;
   created_at: string;
   updated_at?: string;
 }
@@ -44,7 +46,7 @@ export interface Tool {
   setup_time?: number | null; // Initial setup time in hours
   maintenance_time?: number | null; // Ongoing maintenance in hours/month
   complexity_score?: number | null; // 1-10 rating of tool complexity
-  created_at: string;
+  created_at?: string;
 }
 
 export interface StackItem {

@@ -423,7 +423,7 @@ export function AddToolDialog({
                       variant="ghost"
                       size="sm"
                       className="w-full justify-start"
-                      onClick={() => handleSelectExistingTool(tool as Tool)}
+                      onClick={() => handleSelectExistingTool(tool as unknown as Tool)}
                     >
                       {tool.name} ({Math.round(tool.similarity * 100)}% match)
                     </Button>

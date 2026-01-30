@@ -72,7 +72,7 @@ export default function SavedStacks() {
 
           if (error) throw error;
 
-          setSavedStacks((data || []) as SavedStack[]);
+          setSavedStacks((data || []) as any);
 
           // Migrate localStorage saves if any exist
           await migrateLocalStorageSaves(user.id);

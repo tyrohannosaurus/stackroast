@@ -4,6 +4,7 @@ export interface Stack {
     slug: string;
     user_id: string;
     title: string;
+    name?: string; // Alias for title
     tools: Tool[];
     github_url?: string;
     burn_score: number;
@@ -18,6 +19,7 @@ export interface Stack {
     top_community_roast_score?: number | null;
     created_at: string;
     user: Profile;
+    tool_previews?: string[];
   }
   
   export interface Profile {

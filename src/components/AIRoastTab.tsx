@@ -78,7 +78,17 @@ export function AIRoastTab({ stackId, stackSlug, onScrollToRecommendations, pote
           return;
         }
         
-        data = fallbackResult.data;
+        // Set data with defaults for missing fields
+        if (fallbackResult.data) {
+          data = {
+            ...fallbackResult.data,
+            ai_burn_score: fallbackResult.data.burn_score,
+            upvotes: 0,
+            downvotes: 0,
+          };
+        } else {
+          data = null;
+        }
         error = null;
       } else if (error) {
         console.error("Error loading AI roast:", error);
@@ -271,7 +281,7 @@ export function AIRoastTab({ stackId, stackSlug, onScrollToRecommendations, pote
         stack.name,
         tools,
         {
-          onChunk: (chunk, fullText) => {
+          onChunk: (_chunk, fullText) => {
             setStreamingText(fullText);
             // Auto-scroll to bottom of roast container
             if (roastContainerRef.current) {

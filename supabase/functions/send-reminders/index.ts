@@ -40,11 +40,11 @@ interface SavedStackReminder {
     slug: string;
     view_count?: number;
     ai_alternatives?: any;
-  };
+  }[];
   profile: {
     email?: string;
     username: string;
-  };
+  }[];
 }
 
 serve(async (req) => {
@@ -130,13 +130,14 @@ serve(async (req) => {
     // Process each saved stack
     for (const savedStack of savedStacks as SavedStackReminder[]) {
       try {
-        const email = savedStack.profile?.email;
+        const profile = savedStack.profile?.[0];
+        const email = profile?.email;
         if (!email) {
           console.log(`Skipping user ${savedStack.user_id} - no email`);
           continue;
         }
 
-        const stack = savedStack.stack;
+        const stack = savedStack.stack?.[0];
         if (!stack) {
           console.log(`Skipping saved stack ${savedStack.id} - stack not found`);
           continue;

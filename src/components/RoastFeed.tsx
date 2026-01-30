@@ -1,32 +1,10 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { FeedContainer } from "./feed/FeedContainer";
-import { transformLegacyStack } from "@/lib/stackAdapter";
+import { transformLegacyStack, type LegacyStack } from "@/lib/stackAdapter";
 import { LoadingFire } from "@/components/LoadingFire";
 import { Flame } from "lucide-react";
 import type { Stack } from "@/types";
-
-interface LegacyStack {
-  id: string;
-  name: string;
-  slug: string;
-  created_at: string;
-  view_count: number;
-  profile_id: string | null;
-  profiles: {
-    username: string;
-    karma_points?: number;
-  } | null;
-  roast_count?: number;
-  ai_roasts: {
-    roast_text: string;
-    burn_score: number;
-    persona?: string;
-  } | null;
-  community_roasts_count: number;
-  total_upvotes: number;
-  tool_preview: string[];
-}
 
 export function RoastFeed() {
   const [stacks, setStacks] = useState<Stack[]>([]);
@@ -166,12 +144,17 @@ export function RoastFeed() {
 
         for (let i = 0; i < stacksData.length; i++) {
           const stack = stacksData[i];
+          if (!stack) continue;
 
           // Extract profile data (already loaded via relationship)
-          const profile = stack.profiles ? {
-            username: stack.profiles.username,
-            karma_points: stack.profiles.karma_points
-          } : null;
+          const profileData = stack.profiles as any;
+          const profile = profileData && !Array.isArray(profileData) ? {
+            username: profileData.username,
+            karma_points: profileData.karma_points
+          } : (Array.isArray(profileData) && profileData[0] ? {
+            username: profileData[0].username,
+            karma_points: profileData[0].karma_points
+          } : null);
 
           // Extract AI roast (handle both array and single object formats from Supabase)
           let aiRoast = null;

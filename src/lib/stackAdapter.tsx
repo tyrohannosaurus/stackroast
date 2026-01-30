@@ -9,7 +9,7 @@ interface ToolFull {
   affiliate_link?: string;
 }
 
-interface LegacyStack {
+export interface LegacyStack {
   id: string;
   name: string;
   slug: string;
@@ -23,7 +23,9 @@ interface LegacyStack {
   ai_roasts: {
     roast_text: string;
     burn_score: number;
-    persona: string;
+    persona?: string;
+    upvotes?: number;
+    downvotes?: number;
   } | null;
   community_roasts_count: number;
   total_upvotes: number;

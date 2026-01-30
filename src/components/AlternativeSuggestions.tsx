@@ -6,20 +6,18 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { LoadingFire } from '@/components/LoadingFire';
 import { generateStackAlternatives, generateStackImprovements, type StackAlternativesResult } from '@/lib/generateRoast';
-import { generateBudgetAlternatives, type BudgetAlternative } from '@/lib/generateBudgetAlternatives';
+import { generateBudgetAlternatives } from '@/lib/generateBudgetAlternatives';
 import { trackAlternativeClick } from '@/lib/analytics';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { 
   DollarSign, 
-  Clock, 
   ExternalLink, 
   Sparkles, 
   AlertTriangle,
   TrendingDown,
   CheckCircle2,
-  Plus,
-  Lightbulb
+  Plus
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Tool } from '@/types';
@@ -75,13 +73,12 @@ export function AlternativeSuggestions({
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [totalSavings, setTotalSavings] = useState({ monthly: 0, yearly: 0, hours: 0 });
   const [budgetAlternativesData, setBudgetAlternativesData] = useState<BudgetAlternativesResult | null>(null);
-  const [selectedPath, setSelectedPath] = useState<'technical' | 'budget' | null>(null);
 
   // Check if user selected budget path from ImprovementCTA
   useEffect(() => {
-    const path = sessionStorage.getItem('recommendationPath') as 'technical' | 'budget' | null;
+    const path = sessionStorage.getItem('recommendationPath');
     if (path) {
-      setSelectedPath(path);
+      // Could use this to auto-expand budget section if needed
       sessionStorage.removeItem('recommendationPath'); // Clear after reading
     }
   }, []);
@@ -316,31 +313,7 @@ export function AlternativeSuggestions({
           }
         }
 
-        // Save to database (if column exists)
-        try {
-          const { error: updateError } = await supabase
-            .from('stacks')
-            .update({
-              ai_alternatives: result,
-              alternatives_generated_at: new Date().toISOString(),
-            })
-            .eq('id', stackId);
-
-          if (updateError) {
-            // Column might not exist yet (code 42703 = undefined column)
-            if (updateError.code === '42703') {
-              console.log('ai_alternatives column not available yet (run migration to enable persistence)');
-            } else {
-              console.error('Error saving alternatives to DB:', updateError);
-            }
-          }
-        } catch (dbError: any) {
-          // Column might not exist yet, that's okay
-          if (dbError?.code !== '42703') {
-            console.error('Error saving alternatives to DB:', dbError);
-          }
-          // Don't fail the whole operation if DB save fails
-        }
+        // The data is saved in the block above using `replacements`
       } catch (err: any) {
         console.error('❌ Error generating alternatives:', err);
         console.error('Error details:', {
