@@ -193,17 +193,17 @@ export default function RoastMe() {
       await supabase.from('stack_items').insert(stackItems);
 
       // Generate AI roast
-      const toolNames = selectedTools.map(t => t.name);
-      const roastResult = await generateRoast(toolNames, stackName, persona);
+      const toolNames = selectedTools.map(t => ({ name: t.name, category: t.category || '' }));
+      const roastResult = await generateRoast(toolNames as any, stackName, persona) as any;
 
       if (roastResult) {
-        setRoastText(roastResult.roast);
+        setRoastText(roastResult.roast || roastResult.roastText);
         setBurnScore(roastResult.burnScore);
 
         // Save roast to database
         await supabase.from('ai_roasts').insert({
           stack_id: stackData.id,
-          roast_text: roastResult.roast,
+          roast_text: roastResult.roast || roastResult.roastText,
           burn_score: roastResult.burnScore,
           persona: ROAST_PERSONAS[persona].name,
         });

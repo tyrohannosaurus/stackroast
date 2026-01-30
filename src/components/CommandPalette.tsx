@@ -27,9 +27,7 @@ import {
   Sparkles,
   TrendingUp,
   LayoutDashboard,
-  Mail,
   Copy,
-  ExternalLink,
   Palette,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -62,7 +60,6 @@ export function CommandPalette({
 }: CommandPaletteProps) {
   const [open, setOpen] = useState(false);
   const [recentStacks, setRecentStacks] = useState<RecentStack[]>([]);
-  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { user, profile, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
@@ -101,7 +98,6 @@ export function CommandPalette({
   }, [open]);
 
   const loadRecentStacks = async () => {
-    setLoading(true);
     try {
       const { data } = await supabase
         .from('stacks')
@@ -113,8 +109,6 @@ export function CommandPalette({
       setRecentStacks(data || []);
     } catch (error) {
       console.error('Error loading recent stacks:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -139,10 +133,6 @@ export function CommandPalette({
         document.getElementById('leaderboards')?.scrollIntoView({ behavior: 'smooth' });
       }, 300);
     }
-  };
-
-  const handleOpenInNewTab = (url: string) => {
-    window.open(url, '_blank');
   };
 
   return (

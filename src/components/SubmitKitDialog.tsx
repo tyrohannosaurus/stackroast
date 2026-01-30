@@ -659,7 +659,7 @@ export function SubmitKitDialog({ open, onOpenChange }: SubmitKitDialogProps) {
       </Dialog>
 
       <AuthDialog open={authOpen} onOpenChange={setAuthOpen} />
-      <AddToolDialog open={addToolOpen} onOpenChange={setAddToolOpen} />
+      <AddToolDialog open={addToolOpen} onOpenChange={setAddToolOpen} onToolAdded={() => {}} />
     </>
   );
 }

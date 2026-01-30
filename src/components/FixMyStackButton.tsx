@@ -39,8 +39,9 @@ export function FixMyStackButton({ stack }: FixMyStackButtonProps) {
       console.log('🤖 Starting AI-powered stack analysis...');
       
       // Use AI to analyze the stack and identify improvements
+      const stackName = stack.name || stack.title || 'Unknown Stack';
       const improvements = await generateStackImprovements(
-        stack.name,
+        stackName,
         stack.tools.map(t => ({
           name: t.name,
           category: t.category || '',
@@ -126,7 +127,7 @@ export function FixMyStackButton({ stack }: FixMyStackButtonProps) {
         })
       );
 
-      const validSuggestions = toolSuggestions.filter((s): s is Suggestion => s !== null);
+      const validSuggestions = toolSuggestions.filter((s) => s !== null) as Suggestion[];
       setSuggestions(validSuggestions);
       setShowSuggestions(true);
     } finally {

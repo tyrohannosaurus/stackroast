@@ -244,7 +244,7 @@ export default function Stack() {
             : aiRoastData || null;
           
           if (aiRoast) {
-            setAiRoast(aiRoast);
+            setAiRoast(aiRoast as any);
           }
 
           // Extract AI alternatives (may not exist)
@@ -255,7 +255,7 @@ export default function Stack() {
           // Extract username from profile join
           const profileData = stackData.profiles;
           if (profileData) {
-            const username = Array.isArray(profileData) ? profileData[0]?.username : profileData?.username;
+            const username = Array.isArray(profileData) ? (profileData as any)[0]?.username : (profileData as any)?.username;
             if (username) {
               setUsername(username);
             }

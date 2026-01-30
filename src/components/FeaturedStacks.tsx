@@ -145,6 +145,9 @@ export function FeaturedStacks({
   // Single featured stack (no carousel needed)
   if (featuredStacks.length === 1 || !showCarousel) {
     const stack = featuredStacks[0];
+    if (!stack) {
+      return null;
+    }
     return (
       <Card
         className={`bg-gradient-to-br from-violet-500/20 via-purple-500/20 to-pink-500/20 border-violet-500/50 shadow-lg ${className}`}
