@@ -1,38 +1,60 @@
 export function AmbientBackground() {
   return (
     <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-      {/* Deep Blue Blob - Top Right */}
+      {/* Subtle dot pattern overlay */}
       <div 
-        className="absolute w-[600px] h-[600px] rounded-full animate-float-slower"
+        className="absolute inset-0 opacity-30"
         style={{
-          background: 'radial-gradient(circle, rgba(0, 163, 255, 0.08) 0%, transparent 70%)',
-          filter: 'blur(100px)',
-          top: '-200px',
-          right: '-200px',
+          backgroundImage: 'radial-gradient(circle, hsl(var(--border)) 1px, transparent 1px)',
+          backgroundSize: '24px 24px',
         }}
       />
       
-      {/* Purple Blob - Bottom Left */}
+      {/* Floating decorative elements */}
       <div 
-        className="absolute w-[500px] h-[500px] rounded-full animate-float-slow"
+        className="absolute w-16 h-16 rounded-xl animate-float-slower"
         style={{
-          background: 'radial-gradient(circle, rgba(139, 92, 246, 0.06) 0%, transparent 70%)',
-          filter: 'blur(100px)',
-          bottom: '-150px',
-          left: '-150px',
-          animationDirection: 'reverse',
+          background: 'hsl(var(--sky))',
+          border: '2px solid hsl(var(--border))',
+          boxShadow: '4px 4px 0px hsl(var(--border))',
+          top: '15%',
+          right: '10%',
+          transform: 'rotate(-12deg)',
         }}
       />
       
-      {/* Subtle Center Blob */}
       <div 
-        className="absolute w-[400px] h-[400px] rounded-full animate-float"
+        className="absolute w-12 h-12 rounded-full animate-float-slow"
         style={{
-          background: 'radial-gradient(circle, rgba(0, 163, 255, 0.04) 0%, transparent 70%)',
-          filter: 'blur(80px)',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
+          background: 'hsl(var(--accent))',
+          border: '2px solid hsl(var(--border))',
+          boxShadow: '4px 4px 0px hsl(var(--border))',
+          top: '25%',
+          left: '8%',
+        }}
+      />
+      
+      <div 
+        className="absolute w-20 h-20 rounded-2xl animate-float"
+        style={{
+          background: 'hsl(var(--mint))',
+          border: '2px solid hsl(var(--border))',
+          boxShadow: '4px 4px 0px hsl(var(--border))',
+          bottom: '20%',
+          right: '15%',
+          transform: 'rotate(8deg)',
+        }}
+      />
+      
+      <div 
+        className="absolute w-10 h-10 rounded-lg animate-float-slower"
+        style={{
+          background: 'hsl(var(--lavender))',
+          border: '2px solid hsl(var(--border))',
+          boxShadow: '4px 4px 0px hsl(var(--border))',
+          bottom: '30%',
+          left: '12%',
+          transform: 'rotate(-6deg)',
         }}
       />
     </div>

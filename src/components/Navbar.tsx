@@ -45,90 +45,93 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
 
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 z-50 glass-nav">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-accent border-b-2 border-border">
         <div className="container mx-auto px-4">
           <div className="flex h-16 items-center justify-between gap-4">
             {/* Logo */}
-            <Link to="/" className="text-xl font-bold flex items-center gap-2">
-              <img src="/logo.svg" alt="StackRoast" className="w-10 h-10" />
-              <span className="text-foreground hidden sm:inline">StackRoast</span>
+            <Link to="/" className="flex items-center gap-2">
+              <div className="w-10 h-10 rounded-xl bg-primary border-2 border-border shadow-brutal flex items-center justify-center">
+                <span className="text-primary-foreground font-bold text-sm">SR</span>
+              </div>
+              <span className="text-foreground font-bold hidden sm:inline">StackRoast</span>
             </Link>
 
-            {/* Right Side - Search Bar + User Profile + Theme Toggle + Karma + Hamburger */}
+            {/* Center Nav Links - Desktop */}
+            <div className="hidden md:flex items-center gap-2">
+              <Link to="/">
+                <Button variant="ghost" size="sm" className="font-medium">Home</Button>
+              </Link>
+              <Link to="/about">
+                <Button variant="ghost" size="sm" className="font-medium">About</Button>
+              </Link>
+              <Link to="/leaderboard">
+                <Button variant="ghost" size="sm" className="font-medium">Leaderboard</Button>
+              </Link>
+              <Link to="/kits">
+                <Button variant="ghost" size="sm" className="font-medium">Stack Kits</Button>
+              </Link>
+            </div>
+
+            {/* Right Side */}
             <div className="flex items-center gap-2">
               {/* Search Bar - Desktop */}
-              <div className="hidden md:block w-64">
+              <div className="hidden md:block w-48">
                 <SearchTrigger onClick={onSearchOpen || (() => {})} />
               </div>
 
               {/* Search Icon - Mobile */}
               <Button
                 variant="ghost"
-                size="sm"
+                size="icon"
                 onClick={onSearchOpen}
-                className="md:hidden w-9 h-9 p-0 rounded-full hover:bg-white/5"
+                className="md:hidden"
               >
                 <Search className="w-5 h-5" />
               </Button>
 
-              {/* User Profile Link (Desktop) */}
-              {authLoading && user ? (
-                // Loading skeleton when auth is loading but we know user exists
-                <div className="hidden md:flex items-center gap-2 px-3 py-1.5">
-                  <Skeleton className="w-7 h-7 rounded-full" />
-                  <Skeleton className="hidden lg:block w-20 h-4" />
-                </div>
-              ) : user && profile ? (
-                // Show profile when loaded
-                <Link
-                  to={`/user/${profile.username}`}
-                  className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-white/5 transition-colors"
-                >
-                  <Avatar className="w-7 h-7 ring-1 ring-cyber-blue/50">
-                    <AvatarImage src={profile.avatar_url} />
-                    <AvatarFallback className="bg-cyber-blue/20 text-cyber-blue text-xs">
-                      {profile.username[0]?.toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="text-sm font-medium hidden lg:inline">{profile.username}</span>
-                </Link>
-              ) : null}
-
               {/* Theme Toggle */}
               <Button
-                variant="ghost"
-                size="sm"
+                variant="outline"
+                size="icon"
                 onClick={toggleTheme}
-                className="w-9 h-9 p-0 rounded-full hover:bg-white/5"
               >
                 {theme === "dark" ? (
-                  <Sun className="w-5 h-5 text-cyber-blue" />
+                  <Sun className="w-5 h-5" />
                 ) : (
-                  <Moon className="w-5 h-5 text-cyber-blue" />
+                  <Moon className="w-5 h-5" />
                 )}
               </Button>
 
+              {/* CTA Button */}
+              {!user && (
+                <Button
+                  onClick={() => {
+                    setAuthMode("signup");
+                    setAuthOpen(true);
+                  }}
+                  className="hidden sm:flex"
+                >
+                  Get in Touch!
+                </Button>
+              )}
+
               {/* Karma Display */}
               {authLoading && user ? (
-                // Loading skeleton for karma
                 <Skeleton className="w-20 h-8 rounded-full" />
               ) : user && profile ? (
-                // Show karma when loaded
-                <div className="flex items-center gap-2 text-sm px-3 py-1 rounded-full bg-cyber-blue/10 border border-cyber-blue/20">
-                  <Flame className="w-4 h-4 text-cyber-blue" />
-                  <span className="text-cyber-blue font-semibold">
+                <div className="flex items-center gap-2 text-sm px-3 py-1.5 rounded-full bg-card border-2 border-border shadow-brutal">
+                  <Flame className="w-4 h-4 text-coral" />
+                  <span className="text-foreground font-semibold">
                     {profile.karma_points ?? 0}
                   </span>
-                  <span className="hidden sm:inline text-xs text-muted-foreground">logs</span>
                 </div>
               ) : null}
 
               {/* Hamburger Menu Button */}
               <Button
-                variant="ghost"
-                size="sm"
+                variant="outline"
+                size="icon"
                 onClick={() => setMenuOpen(!menuOpen)}
-                className="rounded-full hover:bg-white/5"
               >
                 {menuOpen ? (
                   <X className="w-5 h-5" />
@@ -146,21 +149,20 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
         <>
           {/* Backdrop */}
           <div 
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+            className="fixed inset-0 bg-foreground/20 backdrop-blur-sm z-40"
             onClick={closeMenu}
           />
 
           {/* Menu Panel */}
-          <div className="fixed top-0 right-0 h-full w-80 glass-surface z-50 border-l border-white/10">
+          <div className="fixed top-0 right-0 h-full w-80 bg-card z-50 border-l-2 border-border shadow-brutal-lg">
             <div className="flex flex-col h-full">
               {/* Header */}
-              <div className="flex items-center justify-between p-4 border-b border-white/10">
-                <h3 className="font-semibold text-lg tracking-tight">Menu</h3>
+              <div className="flex items-center justify-between p-4 border-b-2 border-border bg-accent">
+                <h3 className="font-bold text-lg">Menu</h3>
                 <Button
-                  variant="ghost"
-                  size="sm"
+                  variant="outline"
+                  size="icon"
                   onClick={closeMenu}
-                  className="rounded-full hover:bg-white/5"
                 >
                   <X className="w-5 h-5" />
                 </Button>
@@ -170,8 +172,7 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
               <div className="flex-1 overflow-y-auto p-4">
                 {/* User Profile Section */}
                 {authLoading && user ? (
-                  // Loading skeleton in menu
-                  <div className="mb-6 p-4 rounded-xl glass-card">
+                  <div className="mb-6 p-4 rounded-2xl bg-muted border-2 border-border">
                     <div className="flex items-center gap-3 mb-3">
                       <Skeleton className="w-10 h-10 rounded-full" />
                       <div className="flex-1 space-y-2">
@@ -182,24 +183,23 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
                     <Skeleton className="h-9 w-full rounded-full" />
                   </div>
                 ) : user && profile ? (
-                  // Show profile when loaded
-                  <div className="mb-6 p-4 rounded-xl glass-card">
+                  <div className="mb-6 p-4 rounded-2xl bg-muted border-2 border-border">
                     <div className="flex items-center gap-3 mb-3">
-                      <Avatar className="ring-1 ring-cyber-blue/50">
+                      <Avatar className="ring-2 ring-border">
                         <AvatarImage src={profile.avatar_url} />
-                        <AvatarFallback className="bg-cyber-blue/20 text-cyber-blue">
+                        <AvatarFallback className="bg-primary text-primary-foreground">
                           {profile.username[0]?.toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
-                        <p className="font-medium text-foreground">{profile.username}</p>
+                        <p className="font-bold text-foreground">{profile.username}</p>
                         <div className="flex items-center gap-2 mt-1">
-                          <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-cyber-blue/20 border border-cyber-blue/30">
-                            <Flame className="w-3.5 h-3.5 text-cyber-blue" />
-                            <span className="text-sm font-semibold text-cyber-blue">
+                          <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-card border-2 border-border">
+                            <Flame className="w-3.5 h-3.5 text-coral" />
+                            <span className="text-sm font-semibold">
                               {profile.karma_points ?? 0}
                             </span>
-                            <span className="text-xs text-cyber-blue/80 ml-0.5">logs</span>
+                            <span className="text-xs text-muted-foreground ml-0.5">logs</span>
                           </div>
                         </div>
                       </div>
@@ -207,13 +207,12 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
                     <Link
                       to={`/user/${profile.username}`}
                       onClick={closeMenu}
-                      className="block w-full text-center py-2.5 px-4 rounded-full bg-gradient-to-r from-cyber-blue to-cyber-purple hover:shadow-cyber-glow transition-all text-sm font-medium text-white"
+                      className="block w-full text-center py-2.5 px-4 rounded-full bg-primary text-primary-foreground border-2 border-border shadow-brutal hover:shadow-brutal-sm hover:translate-x-0.5 hover:translate-y-0.5 transition-all text-sm font-semibold"
                     >
                       View Profile
                     </Link>
                   </div>
                 ) : (
-                  // Show auth buttons when not logged in
                   <div className="mb-6 space-y-2">
                     <Button
                       onClick={() => {
@@ -221,7 +220,7 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
                         setAuthOpen(true);
                         closeMenu();
                       }}
-                      className="w-full rounded-full bg-gradient-to-r from-cyber-blue to-cyber-purple hover:shadow-cyber-glow"
+                      className="w-full"
                     >
                       Get Started
                     </Button>
@@ -232,7 +231,7 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
                         setAuthOpen(true);
                         closeMenu();
                       }}
-                      className="w-full rounded-full border-white/20 hover:bg-white/5"
+                      className="w-full"
                     >
                       Sign In
                     </Button>
@@ -244,7 +243,7 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
                   <Link
                     to="/"
                     onClick={closeMenu}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors"
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted transition-colors font-medium"
                   >
                     <Home className="w-5 h-5 text-muted-foreground" />
                     <span>Home</span>
@@ -255,27 +254,27 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
                       onSearchOpen?.();
                       closeMenu();
                     }}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors text-left"
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted transition-colors text-left font-medium"
                   >
                     <Search className="w-5 h-5 text-muted-foreground" />
                     <span>Search</span>
-                    <kbd className="ml-auto text-xs text-muted-foreground bg-white/5 px-2 py-0.5 rounded">⌘K</kbd>
+                    <kbd className="ml-auto text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded border border-border">⌘K</kbd>
                   </button>
 
                   <Link
                     to="/kits"
                     onClick={closeMenu}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors"
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted transition-colors font-medium"
                   >
-                    <Sparkles className="w-5 h-5 text-cyber-blue" />
+                    <Sparkles className="w-5 h-5 text-primary" />
                     <span>Stack Kits</span>
-                    <span className="ml-auto text-xs text-cyber-blue bg-cyber-blue/10 px-2 py-0.5 rounded-full">New</span>
+                    <span className="ml-auto text-xs text-primary bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">New</span>
                   </Link>
 
                   <Link
                     to="/leaderboard"
                     onClick={closeMenu}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors"
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted transition-colors font-medium"
                   >
                     <TrendingUp className="w-5 h-5 text-muted-foreground" />
                     <span>Leaderboard</span>
@@ -286,15 +285,15 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
                       <Link
                         to="/saved"
                         onClick={closeMenu}
-                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors"
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted transition-colors font-medium"
                       >
-                        <BookmarkCheck className="w-5 h-5 text-cyber-purple" />
+                        <BookmarkCheck className="w-5 h-5 text-lavender" />
                         <span>Saved Stacks</span>
                       </Link>
                       <Link
                         to="/dashboard"
                         onClick={closeMenu}
-                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors"
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted transition-colors font-medium"
                       >
                         <Settings className="w-5 h-5 text-muted-foreground" />
                         <span>Dashboard</span>
@@ -302,12 +301,12 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
                     </>
                   )}
 
-                  <div className="my-4 border-t border-white/10" />
+                  <div className="my-4 border-t-2 border-border" />
 
                   <Link
                     to="/about"
                     onClick={closeMenu}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors"
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted transition-colors font-medium"
                   >
                     <Info className="w-5 h-5 text-muted-foreground" />
                     <span>About</span>
@@ -316,7 +315,7 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
                   <Link
                     to="/contact"
                     onClick={closeMenu}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors"
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted transition-colors font-medium"
                   >
                     <Mail className="w-5 h-5 text-muted-foreground" />
                     <span>Contact Us</span>
@@ -325,7 +324,7 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
                   <Link
                     to="/support"
                     onClick={closeMenu}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors"
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted transition-colors font-medium"
                   >
                     <LifeBuoy className="w-5 h-5 text-muted-foreground" />
                     <span>Raise a Ticket</span>
@@ -335,10 +334,10 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
 
               {/* Footer - Sign Out */}
               {user && !authLoading && (
-                <div className="p-4 border-t border-white/10">
+                <div className="p-4 border-t-2 border-border">
                   <Button
                     variant="ghost"
-                    className="w-full justify-start gap-3 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-lg"
+                    className="w-full justify-start gap-3 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-xl"
                     onClick={() => {
                       signOut();
                       closeMenu();

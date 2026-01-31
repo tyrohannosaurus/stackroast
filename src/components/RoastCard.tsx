@@ -68,12 +68,12 @@ export function RoastCard({ stack }: RoastCardProps) {
   return (
     <div
       onClick={() => navigate(`/stack/${stack.slug}`)}
-      className="glass-card p-6 cursor-pointer group"
+      className="bg-card rounded-2xl p-6 cursor-pointer group border-2 border-border shadow-brutal hover:shadow-brutal-sm hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
     >
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
-          <h3 className="text-xl font-bold mb-1 group-hover:text-cyber-blue transition-colors tracking-tight">
+          <h3 className="text-xl font-bold mb-1 group-hover:text-primary transition-colors tracking-tight">
             {stack.name}
           </h3>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -85,9 +85,9 @@ export function RoastCard({ stack }: RoastCardProps) {
 
         {/* Burn Score Badge */}
         {stack.ai_roasts && (
-          <div className="flex flex-col items-center">
-            <Flame className="w-6 h-6 text-cyber-blue mb-1" />
-            <span className="text-2xl font-bold text-gradient-cyber">
+          <div className="flex flex-col items-center px-3 py-2 rounded-xl bg-primary/10 border-2 border-border">
+            <Flame className="w-5 h-5 text-primary mb-1" />
+            <span className="text-2xl font-bold text-primary">
               {stack.ai_roasts.burn_score}
             </span>
             <span className="text-xs text-muted-foreground">/ 100</span>
@@ -103,20 +103,20 @@ export function RoastCard({ stack }: RoastCardProps) {
               key={idx}
               src={logo}
               alt=""
-              className="w-8 h-8 rounded-lg border border-white/10"
+              className="w-8 h-8 rounded-lg border-2 border-border"
             />
           ))}
           {stack.tool_preview.length >= 4 && (
-            <span className="text-sm text-muted-foreground">+more</span>
+            <span className="text-sm text-muted-foreground font-medium">+more</span>
           )}
         </div>
       )}
 
       {/* AI Roast Preview */}
       {stack.ai_roasts ? (
-        <div className="glass-surface rounded-xl p-4 mb-4">
+        <div className="bg-muted rounded-xl p-4 mb-4 border-2 border-border">
           <div className="flex items-start gap-2 mb-2">
-            <Badge variant="secondary" className="text-xs bg-white/5 border-white/10">
+            <Badge variant="secondary" className="text-xs border-2 border-border font-semibold">
               {stack.ai_roasts.persona === "vc_bro"
                 ? "The VC Bro"
                 : stack.ai_roasts.persona === "rust_evangelist"
@@ -129,7 +129,7 @@ export function RoastCard({ stack }: RoastCardProps) {
           </p>
         </div>
       ) : (
-        <div className="glass-surface rounded-xl p-4 mb-4">
+        <div className="bg-muted rounded-xl p-4 mb-4 border-2 border-border">
           <p className="text-sm text-muted-foreground italic">
             Awaiting AI roast...
           </p>
@@ -138,7 +138,7 @@ export function RoastCard({ stack }: RoastCardProps) {
 
       {/* Stats Footer with Quick Upvote */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+        <div className="flex items-center gap-4 text-sm text-muted-foreground font-medium">
           <div className="flex items-center gap-1">
             <Flame className="w-4 h-4" />
             <span>{stack.community_roasts_count} roasts</span>
@@ -159,7 +159,7 @@ export function RoastCard({ stack }: RoastCardProps) {
           size="sm"
           onClick={handleQuickUpvote}
           className={`rounded-full ${
-            upvoted ? "text-cyber-blue" : "text-muted-foreground hover:text-cyber-blue"
+            upvoted ? "text-primary" : "text-muted-foreground hover:text-primary"
           } transition-colors`}
         >
           <ArrowUp className={`w-4 h-4 mr-1 ${upvoted ? "fill-current" : ""}`} />
