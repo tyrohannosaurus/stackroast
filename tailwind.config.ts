@@ -14,14 +14,16 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['Inter', 'Mabry Pro', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },
       colors: {
         border: "hsl(var(--border))",
+        "border-strong": "hsl(var(--border-strong))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
+        "background-secondary": "hsl(var(--background-secondary))",
         foreground: "hsl(var(--foreground))",
         primary: {
           DEFAULT: "hsl(var(--primary))",
@@ -51,14 +53,33 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        // Gumroad Colors
-        gumroad: {
-          pink: "hsl(316 100% 77%)",
-          cream: "hsl(60 9% 96%)",
-          black: "hsl(0 0% 9%)",
-          yellow: "hsl(54 100% 62%)",
-          green: "hsl(158 64% 52%)",
-          blue: "hsl(199 89% 48%)",
+        // Gumroad Color Primitives
+        gum: {
+          black: "hsl(var(--gum-black))",
+          pink: "hsl(var(--gum-pink))",
+          "pink-light": "hsl(var(--gum-pink-light))",
+          teal: "hsl(var(--gum-teal))",
+          "teal-light": "hsl(var(--gum-teal-light))",
+          yellow: "hsl(var(--gum-yellow))",
+          "yellow-light": "hsl(var(--gum-yellow-light))",
+          blue: "hsl(var(--gum-blue))",
+          "blue-light": "hsl(var(--gum-blue-light))",
+          red: "hsl(var(--gum-red))",
+          "red-light": "hsl(var(--gum-red-light))",
+          green: "hsl(var(--gum-green))",
+          "green-light": "hsl(var(--gum-green-light))",
+          gray: {
+            50: "hsl(var(--gum-gray-50))",
+            100: "hsl(var(--gum-gray-100))",
+            200: "hsl(var(--gum-gray-200))",
+            300: "hsl(var(--gum-gray-300))",
+            400: "hsl(var(--gum-gray-400))",
+            500: "hsl(var(--gum-gray-500))",
+            600: "hsl(var(--gum-gray-600))",
+            700: "hsl(var(--gum-gray-700))",
+            800: "hsl(var(--gum-gray-800))",
+            900: "hsl(var(--gum-gray-900))",
+          },
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
@@ -77,10 +98,11 @@ export default {
         sm: "calc(var(--radius) - 4px)",
       },
       boxShadow: {
-        'subtle': '0 2px 8px hsl(var(--border) / 0.06)',
-        'medium': '0 4px 20px hsl(var(--border) / 0.1)',
-        'elevated': '0 8px 30px hsl(var(--border) / 0.12)',
-        'glow-pink': '0 8px 30px hsl(316 100% 77% / 0.2)',
+        'xs': 'var(--shadow-xs)',
+        'sm': 'var(--shadow-sm)',
+        'md': 'var(--shadow-md)',
+        'lg': 'var(--shadow-lg)',
+        'xl': 'var(--shadow-xl)',
       },
       keyframes: {
         "accordion-down": {
@@ -96,16 +118,8 @@ export default {
           "100%": { backgroundPosition: "200% 0" },
         },
         float: {
-          "0%, 100%": { transform: "translateY(0) rotate(0deg)" },
-          "50%": { transform: "translateY(-20px) rotate(5deg)" },
-        },
-        "float-reverse": {
-          "0%, 100%": { transform: "translateY(0) rotate(0deg)" },
-          "50%": { transform: "translateY(-15px) rotate(-5deg)" },
-        },
-        pulse: {
-          "0%, 100%": { opacity: "1" },
-          "50%": { opacity: "0.7" },
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-8px)" },
         },
       },
       animation: {
@@ -115,11 +129,6 @@ export default {
         float: "float 6s ease-in-out infinite",
         "float-slow": "float 8s ease-in-out infinite",
         "float-slower": "float 12s ease-in-out infinite",
-        "float-reverse": "float-reverse 7s ease-in-out infinite",
-        pulse: "pulse 2s ease-in-out infinite",
-      },
-      backgroundImage: {
-        "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
       },
     },
   },

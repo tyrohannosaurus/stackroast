@@ -84,19 +84,19 @@ function StackCardPreviewComponent({ stack }: StackCardPreviewProps) {
 
   return (
     <div 
-      className="bg-card rounded-2xl p-5 cursor-pointer group border border-border/10 hover:shadow-medium transition-all duration-200"
+      className="bg-card rounded-lg p-4 cursor-pointer group border border-border hover:border-border-strong hover:shadow-md transition-all"
       onClick={handleCardClick}
     >
       {/* Header */}
-      <div className="flex items-start gap-3 mb-4">
-        <Avatar className="w-9 h-9">
+      <div className="flex items-start gap-3 mb-3">
+        <Avatar className="w-8 h-8">
           <AvatarImage src={stack.user.avatar_url} alt={stack.user.username} />
-          <AvatarFallback className="bg-primary text-primary-foreground text-sm">{stack.user.username[0]?.toUpperCase()}</AvatarFallback>
+          <AvatarFallback className="bg-primary text-primary-foreground text-xs">{stack.user.username[0]?.toUpperCase()}</AvatarFallback>
         </Avatar>
         <div className="flex-1 min-w-0">
           <Link
             to={`/user/${stack.user.username}`}
-            className="font-semibold text-sm hover:text-primary transition-colors"
+            className="font-medium text-sm hover:text-primary transition-colors"
           >
             @{stack.user.username}
           </Link>
@@ -105,8 +105,8 @@ function StackCardPreviewComponent({ stack }: StackCardPreviewProps) {
           </p>
         </div>
         <div className="text-right">
-          <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary/10">
-            <span className="text-lg font-bold text-primary">
+          <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-gum-pink-light">
+            <span className="text-base font-bold text-primary">
               {stack.burn_score}
             </span>
           </div>
@@ -114,20 +114,20 @@ function StackCardPreviewComponent({ stack }: StackCardPreviewProps) {
       </div>
 
       {/* Roast Preview */}
-      <div className="bg-muted/50 rounded-xl p-4 mb-4">
-        <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
+      <div className="bg-muted rounded-md p-3 mb-3">
+        <p className="text-sm text-muted-foreground line-clamp-2">
           {previewText}
         </p>
       </div>
 
       {/* Stats & Actions */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3 text-xs text-muted-foreground font-medium">
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
           <span className="flex items-center gap-1">
             🔥 {stack.roast_count}
           </span>
           {stack.community_votes !== undefined && stack.community_votes !== 0 && (
-            <span className="flex items-center gap-1" title="Community roast votes">
+            <span className="flex items-center gap-1">
               👍 {stack.community_votes > 0 ? '+' : ''}{stack.community_votes}
             </span>
           )}
@@ -136,9 +136,6 @@ function StackCardPreviewComponent({ stack }: StackCardPreviewProps) {
           </span>
           <span className="flex items-center gap-1">
             💬 {stack.comment_count}
-          </span>
-          <span className="flex items-center gap-1">
-            👁 {stack.view_count}
           </span>
         </div>
 
@@ -158,10 +155,10 @@ function StackCardPreviewComponent({ stack }: StackCardPreviewProps) {
             variant="ghost" 
             size="sm" 
             asChild
-            className="group-hover:text-primary transition-colors rounded-full"
+            className="group-hover:text-primary"
           >
             <Link to={`/stack/${stack.slug}`}>
-              View Full <ArrowRight className="w-3 h-3 ml-1" />
+              View <ArrowRight className="w-3 h-3 ml-1" />
             </Link>
           </Button>
         </div>
