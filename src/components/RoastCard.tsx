@@ -68,7 +68,7 @@ export function RoastCard({ stack }: RoastCardProps) {
   return (
     <div
       onClick={() => navigate(`/stack/${stack.slug}`)}
-      className="bg-card rounded-2xl p-6 cursor-pointer group border-2 border-border shadow-brutal hover:shadow-brutal-sm hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+      className="bg-card rounded-2xl p-6 cursor-pointer group border border-border/10 hover:shadow-medium transition-all duration-200"
     >
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
@@ -85,7 +85,7 @@ export function RoastCard({ stack }: RoastCardProps) {
 
         {/* Burn Score Badge */}
         {stack.ai_roasts && (
-          <div className="flex flex-col items-center px-3 py-2 rounded-xl bg-primary/10 border-2 border-border">
+          <div className="flex flex-col items-center px-3 py-2 rounded-xl bg-primary/10">
             <Flame className="w-5 h-5 text-primary mb-1" />
             <span className="text-2xl font-bold text-primary">
               {stack.ai_roasts.burn_score}
@@ -103,7 +103,7 @@ export function RoastCard({ stack }: RoastCardProps) {
               key={idx}
               src={logo}
               alt=""
-              className="w-8 h-8 rounded-lg border-2 border-border"
+              className="w-8 h-8 rounded-lg border border-border/10"
             />
           ))}
           {stack.tool_preview.length >= 4 && (
@@ -114,9 +114,9 @@ export function RoastCard({ stack }: RoastCardProps) {
 
       {/* AI Roast Preview */}
       {stack.ai_roasts ? (
-        <div className="bg-muted rounded-xl p-4 mb-4 border-2 border-border">
+        <div className="bg-muted/50 rounded-xl p-4 mb-4">
           <div className="flex items-start gap-2 mb-2">
-            <Badge variant="secondary" className="text-xs border-2 border-border font-semibold">
+            <Badge variant="secondary" className="text-xs font-semibold">
               {stack.ai_roasts.persona === "vc_bro"
                 ? "The VC Bro"
                 : stack.ai_roasts.persona === "rust_evangelist"
@@ -129,7 +129,7 @@ export function RoastCard({ stack }: RoastCardProps) {
           </p>
         </div>
       ) : (
-        <div className="bg-muted rounded-xl p-4 mb-4 border-2 border-border">
+        <div className="bg-muted/50 rounded-xl p-4 mb-4">
           <p className="text-sm text-muted-foreground italic">
             Awaiting AI roast...
           </p>

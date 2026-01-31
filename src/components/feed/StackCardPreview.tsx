@@ -84,12 +84,12 @@ function StackCardPreviewComponent({ stack }: StackCardPreviewProps) {
 
   return (
     <div 
-      className="bg-card rounded-2xl p-5 cursor-pointer group border-2 border-border shadow-brutal hover:shadow-brutal-sm hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+      className="bg-card rounded-2xl p-5 cursor-pointer group border border-border/10 hover:shadow-medium transition-all duration-200"
       onClick={handleCardClick}
     >
       {/* Header */}
       <div className="flex items-start gap-3 mb-4">
-        <Avatar className="w-9 h-9 ring-2 ring-border">
+        <Avatar className="w-9 h-9">
           <AvatarImage src={stack.user.avatar_url} alt={stack.user.username} />
           <AvatarFallback className="bg-primary text-primary-foreground text-sm">{stack.user.username[0]?.toUpperCase()}</AvatarFallback>
         </Avatar>
@@ -105,7 +105,7 @@ function StackCardPreviewComponent({ stack }: StackCardPreviewProps) {
           </p>
         </div>
         <div className="text-right">
-          <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-primary/10 border-2 border-border">
+          <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary/10">
             <span className="text-lg font-bold text-primary">
               {stack.burn_score}
             </span>
@@ -114,7 +114,7 @@ function StackCardPreviewComponent({ stack }: StackCardPreviewProps) {
       </div>
 
       {/* Roast Preview */}
-      <div className="bg-muted rounded-xl p-4 mb-4 border-2 border-border">
+      <div className="bg-muted/50 rounded-xl p-4 mb-4">
         <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
           {previewText}
         </p>

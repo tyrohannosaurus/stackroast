@@ -1,114 +1,94 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* StackRoast Design System - Neo-Brutalist / Playful Bento */
+/* StackRoast Design System - Gumroad-Inspired Clean Minimal */
 
 @layer base {
   :root {
-    /* Base: Warm Cream/Off-White */
-    --background: 60 30% 98%;
-    --foreground: 0 0% 10%;
+    /* Base: Warm Cream (Gumroad style) */
+    --background: 60 9% 96%;
+    --foreground: 0 0% 9%;
     
     /* Card: Pure White */
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 10%;
+    --card-foreground: 0 0% 9%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 10%;
+    --popover-foreground: 0 0% 9%;
     
-    /* Primary: Turquoise/Cyan */
-    --primary: 180 70% 45%;
-    --primary-foreground: 0 0% 10%;
+    /* Primary: Gumroad Pink */
+    --primary: 316 100% 77%;
+    --primary-foreground: 0 0% 9%;
     
-    /* Secondary: Soft Gray */
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 0 0% 10%;
+    /* Secondary: Light Gray */
+    --secondary: 60 5% 92%;
+    --secondary-foreground: 0 0% 9%;
     
-    /* Muted: Light Gray */
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 9% 46%;
+    /* Muted: Subtle Gray */
+    --muted: 60 5% 94%;
+    --muted-foreground: 0 0% 40%;
     
-    /* Accent: Golden Yellow */
-    --accent: 45 100% 51%;
-    --accent-foreground: 0 0% 10%;
+    /* Accent: Black (for CTAs) */
+    --accent: 0 0% 9%;
+    --accent-foreground: 0 0% 100%;
     
-    /* Destructive: Warm Red */
-    --destructive: 0 72% 51%;
+    /* Destructive */
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
     
-    /* Borders & Focus - Thick Black */
-    --border: 0 0% 10%;
-    --input: 0 0% 10%;
-    --ring: 180 70% 45%;
+    /* Borders - Clean Black */
+    --border: 0 0% 9%;
+    --input: 0 0% 80%;
+    --ring: 316 100% 77%;
     
-    --radius: 1rem;
+    --radius: 0.75rem;
     
-    /* Custom Neo-Brutalist Tokens */
-    --canvas: 60 30% 98%;
-    --surface: 0 0% 100%;
-    --border-thick: 0 0% 10%;
-    --text-primary: 0 0% 10%;
-    --text-secondary: 220 9% 46%;
-    
-    /* Playful Colors */
-    --turquoise: 180 70% 45%;
-    --golden: 45 100% 51%;
-    --mint: 160 60% 80%;
-    --coral: 16 100% 66%;
-    --lavender: 270 60% 80%;
-    --sky: 200 100% 80%;
-    
-    /* Shadows - Solid offset shadows */
-    --shadow-brutal: 4px 4px 0px hsl(0 0% 10%);
-    --shadow-brutal-lg: 6px 6px 0px hsl(0 0% 10%);
-    --shadow-brutal-hover: 2px 2px 0px hsl(0 0% 10%);
+    /* Custom Gumroad Tokens */
+    --gumroad-pink: 316 100% 77%;
+    --gumroad-cream: 60 9% 96%;
+    --gumroad-black: 0 0% 9%;
+    --gumroad-yellow: 54 100% 62%;
+    --gumroad-green: 158 64% 52%;
+    --gumroad-blue: 199 89% 48%;
     
     /* Sidebar */
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 220 9% 46%;
-    --sidebar-primary: 180 70% 45%;
-    --sidebar-primary-foreground: 0 0% 10%;
-    --sidebar-accent: 45 100% 51%;
-    --sidebar-accent-foreground: 0 0% 10%;
-    --sidebar-border: 0 0% 10%;
-    --sidebar-ring: 180 70% 45%;
+    --sidebar-foreground: 0 0% 40%;
+    --sidebar-primary: 316 100% 77%;
+    --sidebar-primary-foreground: 0 0% 9%;
+    --sidebar-accent: 0 0% 9%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 90%;
+    --sidebar-ring: 316 100% 77%;
   }
 
   .dark {
-    /* Dark mode - Inverted but keeping playful vibe */
-    --background: 0 0% 8%;
-    --foreground: 60 30% 98%;
-    --card: 0 0% 12%;
-    --card-foreground: 60 30% 98%;
-    --popover: 0 0% 12%;
-    --popover-foreground: 60 30% 98%;
-    --primary: 180 70% 50%;
-    --primary-foreground: 0 0% 10%;
-    --secondary: 0 0% 18%;
-    --secondary-foreground: 60 30% 98%;
-    --muted: 0 0% 18%;
-    --muted-foreground: 220 14% 60%;
-    --accent: 45 100% 51%;
-    --accent-foreground: 0 0% 10%;
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 60 30% 98%;
-    --border: 60 30% 98%;
-    --input: 60 30% 98%;
-    --ring: 180 70% 50%;
+    /* Dark mode - Inverted with pink accents */
+    --background: 0 0% 6%;
+    --foreground: 60 9% 96%;
+    --card: 0 0% 10%;
+    --card-foreground: 60 9% 96%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 60 9% 96%;
+    --primary: 316 100% 77%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 60 9% 96%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 60%;
+    --accent: 60 9% 96%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 60 9% 96%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 316 100% 77%;
     
-    /* Custom Tokens - Dark */
-    --canvas: 0 0% 8%;
-    --surface: 0 0% 12%;
-    --border-thick: 60 30% 98%;
-    --text-primary: 60 30% 98%;
-    --text-secondary: 220 14% 60%;
-    
-    /* Shadows - Light offset in dark mode */
-    --shadow-brutal: 4px 4px 0px hsl(60 30% 98%);
-    --shadow-brutal-lg: 6px 6px 0px hsl(60 30% 98%);
-    --shadow-brutal-hover: 2px 2px 0px hsl(60 30% 98%);
+    --sidebar-background: 0 0% 10%;
+    --sidebar-foreground: 0 0% 60%;
+    --sidebar-border: 0 0% 20%;
   }
 }
 
@@ -126,12 +106,12 @@
   }
   
   h1, h2, h3, h4, h5, h6 {
-    @apply font-extrabold;
-    letter-spacing: -0.03em;
+    @apply font-bold;
+    letter-spacing: -0.02em;
   }
   
   p {
-    line-height: 1.7;
+    line-height: 1.6;
   }
   
   code, pre, .font-mono {
@@ -140,75 +120,60 @@
 }
 
 @layer components {
-  /* Neo-Brutalist Card */
-  .brutal-card {
-    @apply bg-card rounded-2xl;
+  /* Clean Card */
+  .gum-card {
+    @apply bg-card rounded-2xl p-6;
+    border: 1px solid hsl(var(--border) / 0.1);
+  }
+  
+  .gum-card-bordered {
+    @apply bg-card rounded-2xl p-6;
     border: 2px solid hsl(var(--border));
-    box-shadow: var(--shadow-brutal);
-    transition: all 0.15s ease;
   }
   
-  .brutal-card:hover {
-    box-shadow: var(--shadow-brutal-hover);
-    transform: translate(2px, 2px);
-  }
-  
-  /* Header Bar Style */
-  .brutal-header {
-    @apply bg-accent rounded-2xl px-6 py-3;
-    border: 2px solid hsl(var(--border));
-    box-shadow: var(--shadow-brutal);
-  }
-  
-  /* Pill Button - Primary (Turquoise) */
-  .btn-brutal {
-    @apply px-6 py-2.5 rounded-full font-semibold text-sm transition-all duration-150;
-    background: hsl(var(--primary));
-    border: 2px solid hsl(var(--border));
-    box-shadow: var(--shadow-brutal);
-    color: hsl(var(--primary-foreground));
-  }
-  
-  .btn-brutal:hover {
-    box-shadow: var(--shadow-brutal-hover);
-    transform: translate(2px, 2px);
-  }
-  
-  /* Pill Button - Outline */
-  .btn-brutal-outline {
-    @apply px-6 py-2.5 rounded-full font-semibold text-sm transition-all duration-150;
-    background: hsl(var(--card));
-    border: 2px solid hsl(var(--border));
-    box-shadow: var(--shadow-brutal);
-    color: hsl(var(--foreground));
-  }
-  
-  .btn-brutal-outline:hover {
-    box-shadow: var(--shadow-brutal-hover);
-    transform: translate(2px, 2px);
-  }
-  
-  /* Accent Button (Golden) */
-  .btn-brutal-accent {
-    @apply px-6 py-2.5 rounded-full font-semibold text-sm transition-all duration-150;
+  /* Pill Button - Primary (Black) */
+  .btn-gum {
+    @apply px-6 py-3 rounded-full font-semibold text-base transition-all duration-200;
     background: hsl(var(--accent));
-    border: 2px solid hsl(var(--border));
-    box-shadow: var(--shadow-brutal);
     color: hsl(var(--accent-foreground));
   }
   
-  .btn-brutal-accent:hover {
-    box-shadow: var(--shadow-brutal-hover);
-    transform: translate(2px, 2px);
+  .btn-gum:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+  }
+  
+  /* Pill Button - Outline */
+  .btn-gum-outline {
+    @apply px-6 py-3 rounded-full font-semibold text-base transition-all duration-200;
+    background: transparent;
+    border: 1px solid hsl(var(--border) / 0.2);
+    color: hsl(var(--foreground));
+  }
+  
+  .btn-gum-outline:hover {
+    background: hsl(var(--muted));
+  }
+  
+  /* Pink Accent Button */
+  .btn-gum-pink {
+    @apply px-6 py-3 rounded-full font-semibold text-base transition-all duration-200;
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+  }
+  
+  .btn-gum-pink:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
   }
   
   /* Tech Pill/Badge */
   .tech-pill {
     @apply inline-flex items-center gap-2 px-4 py-2 rounded-full font-medium text-sm;
     background: hsl(var(--card));
-    border: 2px solid hsl(var(--border));
+    border: 1px solid hsl(var(--border) / 0.1);
     color: hsl(var(--foreground));
-    transition: all 0.15s ease;
+    transition: all 0.2s ease;
   }
   
   .tech-pill:hover {
@@ -216,56 +181,56 @@
   }
   
   /* Navigation Bar */
-  .brutal-nav {
-    @apply bg-accent;
-    border-bottom: 2px solid hsl(var(--border));
+  .gum-nav {
+    @apply bg-background;
+    border-bottom: 1px solid hsl(var(--border) / 0.1);
   }
   
   /* Input Field */
-  .brutal-input {
-    @apply rounded-xl px-4 py-3 bg-card;
-    border: 2px solid hsl(var(--border));
-    transition: all 0.15s ease;
+  .gum-input {
+    @apply rounded-full px-5 py-3 bg-card text-base;
+    border: 1px solid hsl(var(--border) / 0.15);
+    transition: all 0.2s ease;
   }
   
-  .brutal-input:focus {
+  .gum-input:focus {
     outline: none;
-    box-shadow: var(--shadow-brutal-hover);
+    border-color: hsl(var(--primary));
   }
   
-  /* Icon Box - Like the code icon in reference */
-  .icon-box {
-    @apply inline-flex items-center justify-center rounded-xl p-3;
-    background: hsl(var(--sky));
-    border: 2px solid hsl(var(--border));
-    box-shadow: var(--shadow-brutal);
-  }
-  
-  /* Legacy glass classes - now brutalist */
+  /* Legacy glass classes - now clean style */
   .glass-surface {
     @apply bg-card rounded-2xl;
-    border: 2px solid hsl(var(--border));
-    box-shadow: var(--shadow-brutal);
+    border: 1px solid hsl(var(--border) / 0.1);
   }
   
   .glass-nav {
-    @apply bg-accent;
-    border-bottom: 2px solid hsl(var(--border));
+    @apply bg-background;
+    border-bottom: 1px solid hsl(var(--border) / 0.1);
   }
   
   .glass-card {
     @apply bg-card rounded-2xl;
-    border: 2px solid hsl(var(--border));
-    box-shadow: var(--shadow-brutal);
-    transition: all 0.15s ease;
+    border: 1px solid hsl(var(--border) / 0.1);
+    transition: all 0.2s ease;
   }
   
   .glass-card:hover {
-    box-shadow: var(--shadow-brutal-hover);
-    transform: translate(2px, 2px);
+    box-shadow: 0 4px 20px hsl(var(--border) / 0.08);
+  }
+  
+  /* Legacy brutal classes - now clean style */
+  .brutal-card {
+    @apply bg-card rounded-2xl;
+    border: 1px solid hsl(var(--border) / 0.1);
+    transition: all 0.2s ease;
+  }
+  
+  .brutal-card:hover {
+    box-shadow: 0 4px 20px hsl(var(--border) / 0.08);
   }
 
-  /* Text gradient - now solid dark */
+  /* Text gradient - plain dark text */
   .text-gradient {
     color: hsl(var(--foreground));
   }
@@ -276,51 +241,43 @@
   
   /* Legacy button classes */
   .btn-pill {
-    @apply px-6 py-2.5 rounded-full font-semibold text-sm transition-all duration-150;
+    @apply px-6 py-3 rounded-full font-semibold transition-all duration-200;
     background: hsl(var(--card));
-    border: 2px solid hsl(var(--border));
-    box-shadow: var(--shadow-brutal);
+    border: 1px solid hsl(var(--border) / 0.15);
     color: hsl(var(--foreground));
   }
   
   .btn-pill:hover {
-    box-shadow: var(--shadow-brutal-hover);
-    transform: translate(2px, 2px);
+    background: hsl(var(--muted));
   }
   
   .btn-silver {
-    @apply px-6 py-2.5 rounded-full font-semibold text-sm transition-all duration-150;
+    @apply px-6 py-3 rounded-full font-semibold transition-all duration-200;
     background: hsl(var(--secondary));
-    border: 2px solid hsl(var(--border));
-    box-shadow: var(--shadow-brutal);
     color: hsl(var(--foreground));
   }
   
   .btn-silver:hover {
-    box-shadow: var(--shadow-brutal-hover);
-    transform: translate(2px, 2px);
+    background: hsl(var(--muted));
   }
   
   .btn-fire {
-    @apply px-6 py-2.5 rounded-full font-semibold text-sm transition-all duration-150;
+    @apply px-6 py-3 rounded-full font-semibold transition-all duration-200;
     background: hsl(var(--primary));
-    border: 2px solid hsl(var(--border));
-    box-shadow: var(--shadow-brutal);
     color: hsl(var(--primary-foreground));
   }
   
   .btn-fire:hover {
-    box-shadow: var(--shadow-brutal-hover);
-    transform: translate(2px, 2px);
+    opacity: 0.9;
   }
 
-  /* Glow accent - now uses shadow */
+  /* Glow accent - subtle shadow */
   .glow-accent {
-    box-shadow: var(--shadow-brutal);
+    box-shadow: 0 4px 20px hsl(var(--primary) / 0.15);
   }
   
   .shadow-cyber-glow {
-    box-shadow: var(--shadow-brutal-lg);
+    box-shadow: 0 8px 30px hsl(var(--primary) / 0.2);
   }
 }
 
@@ -338,25 +295,25 @@
   }
 
   /* Shadow utilities */
-  .shadow-brutal {
-    box-shadow: var(--shadow-brutal);
+  .shadow-subtle {
+    box-shadow: 0 2px 8px hsl(var(--border) / 0.06);
   }
   
-  .shadow-brutal-lg {
-    box-shadow: var(--shadow-brutal-lg);
+  .shadow-medium {
+    box-shadow: 0 4px 20px hsl(var(--border) / 0.1);
   }
   
-  .shadow-brutal-hover {
-    box-shadow: var(--shadow-brutal-hover);
+  .shadow-elevated {
+    box-shadow: 0 8px 30px hsl(var(--border) / 0.12);
   }
 }
 
 @keyframes float {
   0%, 100% { transform: translateY(0) rotate(0deg); }
-  50% { transform: translateY(-10px) rotate(2deg); }
+  50% { transform: translateY(-20px) rotate(3deg); }
 }
 
-/* TypeAnimation text styling - Dark text */
+/* TypeAnimation text styling */
 .hero-typewriter span {
   color: hsl(var(--primary)) !important;
   -webkit-text-fill-color: hsl(var(--primary)) !important;
@@ -375,20 +332,19 @@
 
 /* Scrollbar styling */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: hsl(var(--muted));
-  border-radius: 4px;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--border));
-  border-radius: 4px;
+  background: hsl(var(--border) / 0.2);
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--foreground));
+  background: hsl(var(--border) / 0.4);
 }

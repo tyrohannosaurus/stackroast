@@ -53,18 +53,18 @@ export function RecommendationCard({
   const getTypeStyles = () => {
     switch (rec.type) {
       case 'budget':
-        return 'bg-mint/30 border-2 border-border';
+        return 'bg-gumroad-green/10 border border-gumroad-green/20';
       case 'missing':
-        return 'bg-sky/30 border-2 border-border';
+        return 'bg-gumroad-blue/10 border border-gumroad-blue/20';
       case 'replacement':
         return rec.isSponsored
-          ? 'bg-lavender/30 border-2 border-border'
-          : 'bg-card border-2 border-border';
+          ? 'bg-primary/10 border border-primary/20'
+          : 'bg-card border border-border/10';
     }
   };
 
   return (
-    <div className={`p-4 rounded-2xl shadow-brutal ${getTypeStyles()}`}>
+    <div className={`p-4 rounded-2xl hover:shadow-medium transition-all duration-200 ${getTypeStyles()}`}>
       <div className="flex items-start gap-4">
           <ToolLogo
             src={toolData?.logo_url}
@@ -83,13 +83,13 @@ export function RecommendationCard({
                 </>
               )}
               {rec.severity && (
-                <Badge variant="outline" className={`${getSeverityColor(rec.severity)} rounded-full border-2`}>
+                <Badge variant="outline" className={`${getSeverityColor(rec.severity)} rounded-full`}>
                   {getSeverityIcon(rec.severity)}
                   <span className="ml-1 capitalize">{rec.severity}</span>
                 </Badge>
               )}
               {rec.contextScore && (
-                <Badge variant="outline" className="bg-primary/10 text-primary border-2 border-border text-xs rounded-full font-semibold">
+                <Badge variant="outline" className="bg-primary/10 text-primary text-xs rounded-full font-semibold">
                   Fit: {rec.contextScore}/100
                 </Badge>
               )}
@@ -100,9 +100,9 @@ export function RecommendationCard({
             </div>
             <p className="text-sm text-muted-foreground mb-3 leading-relaxed">{rec.reason}</p>
             {rec.tradeoffs && rec.tradeoffs.length > 0 && (
-              <div className="mb-3 p-3 bg-accent/50 rounded-xl border-2 border-border">
+              <div className="mb-3 p-3 bg-muted/50 rounded-xl">
                 <div className="flex items-center gap-2 mb-1">
-                  <AlertTriangle className="w-3 h-3 text-coral" />
+                  <AlertTriangle className="w-3 h-3 text-destructive" />
                   <span className="text-xs font-bold text-foreground">Consider before switching:</span>
                 </div>
                 <ul className="list-disc list-inside space-y-0.5 text-xs text-muted-foreground ml-4">

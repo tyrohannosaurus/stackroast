@@ -45,53 +45,41 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
 
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-accent border-b-2 border-border">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-background border-b border-border/10">
         <div className="container mx-auto px-4">
           <div className="flex h-16 items-center justify-between gap-4">
             {/* Logo */}
-            <Link to="/" className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-xl bg-primary border-2 border-border shadow-brutal flex items-center justify-center">
+            <Link to="/" className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center">
                 <span className="text-primary-foreground font-bold text-sm">SR</span>
               </div>
-              <span className="text-foreground font-bold hidden sm:inline">StackRoast</span>
+              <span className="text-foreground font-bold text-lg hidden sm:inline tracking-tight">StackRoast</span>
             </Link>
 
             {/* Center Nav Links - Desktop */}
-            <div className="hidden md:flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-1">
               <Link to="/">
-                <Button variant="ghost" size="sm" className="font-medium">Home</Button>
+                <Button variant="ghost" size="sm" className="font-medium">Discover</Button>
               </Link>
               <Link to="/about">
-                <Button variant="ghost" size="sm" className="font-medium">About</Button>
+                <Button variant="ghost" size="sm" className="font-medium">Blog</Button>
               </Link>
               <Link to="/leaderboard">
-                <Button variant="ghost" size="sm" className="font-medium">Leaderboard</Button>
+                <Button variant="ghost" size="sm" className="font-medium">Pricing</Button>
               </Link>
               <Link to="/kits">
-                <Button variant="ghost" size="sm" className="font-medium">Stack Kits</Button>
+                <Button variant="ghost" size="sm" className="font-medium">Features</Button>
+              </Link>
+              <Link to="/about">
+                <Button variant="outline" size="sm" className="font-medium">About</Button>
               </Link>
             </div>
 
             {/* Right Side */}
             <div className="flex items-center gap-2">
-              {/* Search Bar - Desktop */}
-              <div className="hidden md:block w-48">
-                <SearchTrigger onClick={onSearchOpen || (() => {})} />
-              </div>
-
-              {/* Search Icon - Mobile */}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onSearchOpen}
-                className="md:hidden"
-              >
-                <Search className="w-5 h-5" />
-              </Button>
-
               {/* Theme Toggle */}
               <Button
-                variant="outline"
+                variant="ghost"
                 size="icon"
                 onClick={toggleTheme}
               >
@@ -102,36 +90,51 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
                 )}
               </Button>
 
-              {/* CTA Button */}
+              {/* Login / CTA */}
               {!user && (
-                <Button
-                  onClick={() => {
-                    setAuthMode("signup");
-                    setAuthOpen(true);
-                  }}
-                  className="hidden sm:flex"
-                >
-                  Get in Touch!
-                </Button>
+                <>
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setAuthMode("signin");
+                      setAuthOpen(true);
+                    }}
+                    className="hidden sm:flex"
+                  >
+                    Log in
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setAuthMode("signup");
+                      setAuthOpen(true);
+                    }}
+                    className="hidden sm:flex"
+                  >
+                    Start roasting
+                  </Button>
+                </>
               )}
 
-              {/* Karma Display */}
+              {/* User Avatar / Karma */}
               {authLoading && user ? (
-                <Skeleton className="w-20 h-8 rounded-full" />
+                <Skeleton className="w-9 h-9 rounded-full" />
               ) : user && profile ? (
-                <div className="flex items-center gap-2 text-sm px-3 py-1.5 rounded-full bg-card border-2 border-border shadow-brutal">
-                  <Flame className="w-4 h-4 text-coral" />
-                  <span className="text-foreground font-semibold">
-                    {profile.karma_points ?? 0}
-                  </span>
-                </div>
+                <Link to={`/user/${profile.username}`} className="flex items-center gap-2">
+                  <Avatar className="w-9 h-9">
+                    <AvatarImage src={profile.avatar_url} />
+                    <AvatarFallback className="bg-primary text-primary-foreground text-sm">
+                      {profile.username[0]?.toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                </Link>
               ) : null}
 
               {/* Hamburger Menu Button */}
               <Button
-                variant="outline"
+                variant="ghost"
                 size="icon"
                 onClick={() => setMenuOpen(!menuOpen)}
+                className="md:hidden"
               >
                 {menuOpen ? (
                   <X className="w-5 h-5" />
@@ -149,18 +152,18 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
         <>
           {/* Backdrop */}
           <div 
-            className="fixed inset-0 bg-foreground/20 backdrop-blur-sm z-40"
+            className="fixed inset-0 bg-foreground/10 backdrop-blur-sm z-40"
             onClick={closeMenu}
           />
 
           {/* Menu Panel */}
-          <div className="fixed top-0 right-0 h-full w-80 bg-card z-50 border-l-2 border-border shadow-brutal-lg">
+          <div className="fixed top-0 right-0 h-full w-80 bg-card z-50 border-l border-border/10 shadow-elevated">
             <div className="flex flex-col h-full">
               {/* Header */}
-              <div className="flex items-center justify-between p-4 border-b-2 border-border bg-accent">
+              <div className="flex items-center justify-between p-4 border-b border-border/10">
                 <h3 className="font-bold text-lg">Menu</h3>
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="icon"
                   onClick={closeMenu}
                 >
