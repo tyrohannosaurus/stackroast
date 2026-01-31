@@ -22,16 +22,9 @@ export function Hero() {
   };
 
   return (
-    <div className="space-y-12">
-      {/* Greeting Badge */}
-      <div className="flex justify-center">
-        <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent border-2 border-border shadow-brutal text-accent-foreground font-semibold">
-          Hi there! 👋
-        </span>
-      </div>
-
+    <div className="space-y-10 max-w-4xl mx-auto">
       {/* Main Heading with Animation */}
-      <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-center leading-tight tracking-tight text-foreground">
+      <h1 className="text-5xl md:text-6xl lg:text-7xl font-black text-center leading-[1.1] tracking-tight text-foreground">
         Roast my{" "}
         <span className="hero-typewriter">
           <TypeAnimation
@@ -63,9 +56,9 @@ export function Hero() {
         the community of developers who embrace the roast.
       </p>
 
-      {/* CTA Buttons */}
-      <div className="flex flex-col items-center justify-center gap-6">
-        <div className="flex flex-wrap items-center justify-center gap-4">
+      {/* CTA Buttons - Gumroad style */}
+      <div className="flex flex-col items-center justify-center gap-5">
+        <div className="flex flex-wrap items-center justify-center gap-3">
           <Button 
             size="lg" 
             className="gap-2" 
@@ -74,59 +67,57 @@ export function Hero() {
             <Flame className="w-5 h-5" />
             Submit Your Stack
           </Button>
+          
+          {/* Search Input - Gumroad style */}
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search stacks..."
+              className="gum-input w-64 pr-12"
+              onClick={() => {
+                const roastsSection = document.getElementById("roasts-feed");
+                if (roastsSection) {
+                  roastsSection.scrollIntoView({ behavior: "smooth", block: "start" });
+                }
+              }}
+              readOnly
+            />
+            <button className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-muted rounded-full hover:bg-secondary transition-colors">
+              <Eye className="w-4 h-4 text-muted-foreground" />
+            </button>
+          </div>
+        </div>
+        
+        <div className="flex flex-wrap items-center justify-center gap-3 text-sm">
           <Button 
-            size="lg" 
-            variant="outline" 
+            variant="ghost" 
             className="gap-2"
             onClick={() => setRepoDialogOpen(true)}
           >
-            <Github className="w-5 h-5" />
+            <Github className="w-4 h-4" />
             Import from GitHub
           </Button>
           <Button 
-            size="lg" 
-            variant="accent" 
+            variant="ghost" 
             className="gap-2"
             onClick={() => setVisualRoastOpen(true)}
           >
-            <Eye className="w-5 h-5" />
+            <Eye className="w-4 h-4" />
             Visual Analysis
           </Button>
-        </div>
-        <div className="flex flex-wrap items-center justify-center gap-4">
           <Button 
-            size="lg" 
             variant="ghost" 
-            className="gap-2 text-primary"
+            className="gap-2"
             onClick={() => setRoastFriendOpen(true)}
           >
-            <Users className="w-5 h-5" />
+            <Users className="w-4 h-4" />
             Roast a Friend
-          </Button>
-          <Link to="/kits">
-            <Button
-              size="lg"
-              variant="ghost"
-              className="gap-2"
-            >
-              <Sparkles className="w-5 h-5" />
-              Browse Stack Kits
-            </Button>
-          </Link>
-          <Button
-            size="lg"
-            variant="ghost"
-            onClick={scrollToRoasts}
-            className="gap-2"
-          >
-            View Recent Roasts
-            <span className="ml-1">→</span>
           </Button>
         </div>
       </div>
 
-      {/* Tech Pills - Like in the reference */}
-      <div className="flex flex-wrap items-center justify-center gap-3 pt-8">
+      {/* Tech Pills - Clean style */}
+      <div className="flex flex-wrap items-center justify-center gap-2 pt-4">
         {["React", "Next.js", "TypeScript", "Python", "Node.js", "Tailwind", "Supabase", "Vercel"].map((tech) => (
           <span 
             key={tech}

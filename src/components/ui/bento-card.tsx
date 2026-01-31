@@ -34,14 +34,13 @@ export function BentoCard({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ 
-        x: 2, 
-        y: 2,
-        boxShadow: "2px 2px 0px hsl(var(--border))"
+        y: -2,
+        boxShadow: "0 8px 30px hsl(var(--border) / 0.12)"
       }}
-      transition={{ duration: 0.15, ease: "easeOut" }}
+      transition={{ duration: 0.2, ease: "easeOut" }}
       className={cn(
         "relative overflow-hidden rounded-2xl",
-        "bg-card border-2 border-border shadow-brutal",
+        "bg-card border border-border/10",
         colSpanClass,
         rowSpanClass,
         className
