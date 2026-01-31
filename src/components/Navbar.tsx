@@ -45,38 +45,50 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
 
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-background border-b border-border/10">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-background border-b border-border">
         <div className="container mx-auto px-4">
-          <div className="flex h-16 items-center justify-between gap-4">
+          <div className="flex h-14 items-center justify-between gap-4">
             {/* Logo */}
-            <Link to="/" className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center">
+            <Link to="/" className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
                 <span className="text-primary-foreground font-bold text-sm">SR</span>
               </div>
-              <span className="text-foreground font-bold text-lg hidden sm:inline tracking-tight">StackRoast</span>
+              <span className="text-foreground font-bold hidden sm:inline">StackRoast</span>
             </Link>
 
             {/* Center Nav Links - Desktop */}
             <div className="hidden md:flex items-center gap-1">
               <Link to="/">
-                <Button variant="ghost" size="sm" className="font-medium">Discover</Button>
-              </Link>
-              <Link to="/about">
-                <Button variant="ghost" size="sm" className="font-medium">Blog</Button>
+                <Button variant="ghost" size="sm">Discover</Button>
               </Link>
               <Link to="/leaderboard">
-                <Button variant="ghost" size="sm" className="font-medium">Pricing</Button>
+                <Button variant="ghost" size="sm">Leaderboard</Button>
               </Link>
               <Link to="/kits">
-                <Button variant="ghost" size="sm" className="font-medium">Features</Button>
+                <Button variant="ghost" size="sm">Stack Kits</Button>
               </Link>
               <Link to="/about">
-                <Button variant="outline" size="sm" className="font-medium">About</Button>
+                <Button variant="ghost" size="sm">About</Button>
               </Link>
             </div>
 
             {/* Right Side */}
             <div className="flex items-center gap-2">
+              {/* Search - Desktop */}
+              <div className="hidden md:block">
+                <SearchTrigger onClick={onSearchOpen || (() => {})} />
+              </div>
+
+              {/* Search Icon - Mobile */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onSearchOpen}
+                className="md:hidden"
+              >
+                <Search className="w-4 h-4" />
+              </Button>
+
               {/* Theme Toggle */}
               <Button
                 variant="ghost"
@@ -84,17 +96,18 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
                 onClick={toggleTheme}
               >
                 {theme === "dark" ? (
-                  <Sun className="w-5 h-5" />
+                  <Sun className="w-4 h-4" />
                 ) : (
-                  <Moon className="w-5 h-5" />
+                  <Moon className="w-4 h-4" />
                 )}
               </Button>
 
-              {/* Login / CTA */}
+              {/* Auth Buttons */}
               {!user && (
                 <>
                   <Button
                     variant="ghost"
+                    size="sm"
                     onClick={() => {
                       setAuthMode("signin");
                       setAuthOpen(true);
@@ -104,6 +117,7 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
                     Log in
                   </Button>
                   <Button
+                    size="sm"
                     onClick={() => {
                       setAuthMode("signup");
                       setAuthOpen(true);
@@ -115,32 +129,28 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
                 </>
               )}
 
-              {/* User Avatar / Karma */}
+              {/* User Avatar */}
               {authLoading && user ? (
-                <Skeleton className="w-9 h-9 rounded-full" />
+                <Skeleton className="w-8 h-8 rounded-full" />
               ) : user && profile ? (
-                <Link to={`/user/${profile.username}`} className="flex items-center gap-2">
-                  <Avatar className="w-9 h-9">
+                <Link to={`/user/${profile.username}`}>
+                  <Avatar className="w-8 h-8">
                     <AvatarImage src={profile.avatar_url} />
-                    <AvatarFallback className="bg-primary text-primary-foreground text-sm">
+                    <AvatarFallback className="bg-primary text-primary-foreground text-xs">
                       {profile.username[0]?.toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                 </Link>
               ) : null}
 
-              {/* Hamburger Menu Button */}
+              {/* Mobile Menu */}
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setMenuOpen(!menuOpen)}
                 className="md:hidden"
               >
-                {menuOpen ? (
-                  <X className="w-5 h-5" />
-                ) : (
-                  <Menu className="w-5 h-5" />
-                )}
+                {menuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
               </Button>
             </div>
           </div>
@@ -152,22 +162,18 @@ export function Navbar({ onSearchOpen }: NavbarProps) {
         <>
           {/* Backdrop */}
           <div 
-            className="fixed inset-0 bg-foreground/10 backdrop-blur-sm z-40"
+            className="fixed inset-0 bg-foreground/5 backdrop-blur-sm z-40"
             onClick={closeMenu}
           />
 
           {/* Menu Panel */}
-          <div className="fixed top-0 right-0 h-full w-80 bg-card z-50 border-l border-border/10 shadow-elevated">
+          <div className="fixed top-0 right-0 h-full w-72 bg-card z-50 border-l border-border shadow-xl">
             <div className="flex flex-col h-full">
               {/* Header */}
-              <div className="flex items-center justify-between p-4 border-b border-border/10">
-                <h3 className="font-bold text-lg">Menu</h3>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={closeMenu}
-                >
-                  <X className="w-5 h-5" />
+              <div className="flex items-center justify-between p-4 border-b border-border">
+                <span className="font-bold">Menu</span>
+                <Button variant="ghost" size="icon" onClick={closeMenu}>
+                  <X className="w-4 h-4" />
                 </Button>
               </div>
 

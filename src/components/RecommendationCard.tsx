@@ -53,18 +53,18 @@ export function RecommendationCard({
   const getTypeStyles = () => {
     switch (rec.type) {
       case 'budget':
-        return 'bg-gumroad-green/10 border border-gumroad-green/20';
+        return 'bg-gum-green-light border border-gum-green/20';
       case 'missing':
-        return 'bg-gumroad-blue/10 border border-gumroad-blue/20';
+        return 'bg-gum-blue-light border border-gum-blue/20';
       case 'replacement':
         return rec.isSponsored
-          ? 'bg-primary/10 border border-primary/20'
-          : 'bg-card border border-border/10';
+          ? 'bg-gum-pink-light border border-primary/20'
+          : 'bg-card border border-border';
     }
   };
 
   return (
-    <div className={`p-4 rounded-2xl hover:shadow-medium transition-all duration-200 ${getTypeStyles()}`}>
+    <div className={`p-4 rounded-lg hover:shadow-md transition-all ${getTypeStyles()}`}>
       <div className="flex items-start gap-4">
           <ToolLogo
             src={toolData?.logo_url}

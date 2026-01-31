@@ -68,12 +68,12 @@ export function RoastCard({ stack }: RoastCardProps) {
   return (
     <div
       onClick={() => navigate(`/stack/${stack.slug}`)}
-      className="bg-card rounded-2xl p-6 cursor-pointer group border border-border/10 hover:shadow-medium transition-all duration-200"
+      className="bg-card rounded-lg p-5 cursor-pointer group border border-border hover:border-border-strong hover:shadow-md transition-all"
     >
       {/* Header */}
-      <div className="flex items-start justify-between mb-4">
+      <div className="flex items-start justify-between mb-3">
         <div className="flex-1">
-          <h3 className="text-xl font-bold mb-1 group-hover:text-primary transition-colors tracking-tight">
+          <h3 className="text-lg font-bold mb-1 group-hover:text-primary transition-colors">
             {stack.name}
           </h3>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -85,9 +85,9 @@ export function RoastCard({ stack }: RoastCardProps) {
 
         {/* Burn Score Badge */}
         {stack.ai_roasts && (
-          <div className="flex flex-col items-center px-3 py-2 rounded-xl bg-primary/10">
-            <Flame className="w-5 h-5 text-primary mb-1" />
-            <span className="text-2xl font-bold text-primary">
+          <div className="flex flex-col items-center px-3 py-2 rounded-md bg-gum-pink-light">
+            <Flame className="w-4 h-4 text-primary mb-0.5" />
+            <span className="text-xl font-bold text-primary">
               {stack.ai_roasts.burn_score}
             </span>
             <span className="text-xs text-muted-foreground">/ 100</span>
@@ -97,39 +97,39 @@ export function RoastCard({ stack }: RoastCardProps) {
 
       {/* Tool Preview */}
       {stack.tool_preview.length > 0 && (
-        <div className="flex items-center gap-2 mb-4">
+        <div className="flex items-center gap-2 mb-3">
           {stack.tool_preview.map((logo, idx) => (
             <img
               key={idx}
               src={logo}
               alt=""
-              className="w-8 h-8 rounded-lg border border-border/10"
+              className="w-7 h-7 rounded border border-border"
             />
           ))}
           {stack.tool_preview.length >= 4 && (
-            <span className="text-sm text-muted-foreground font-medium">+more</span>
+            <span className="text-xs text-muted-foreground">+more</span>
           )}
         </div>
       )}
 
       {/* AI Roast Preview */}
       {stack.ai_roasts ? (
-        <div className="bg-muted/50 rounded-xl p-4 mb-4">
-          <div className="flex items-start gap-2 mb-2">
-            <Badge variant="secondary" className="text-xs font-semibold">
+        <div className="bg-muted rounded-md p-3 mb-3">
+          <div className="flex items-start gap-2 mb-1.5">
+            <Badge variant="secondary" className="text-xs">
               {stack.ai_roasts.persona === "vc_bro"
-                ? "The VC Bro"
+                ? "VC Bro"
                 : stack.ai_roasts.persona === "rust_evangelist"
-                ? "The Rust Evangelist"
-                : "The Senior Dev"}
+                ? "Rust Evangelist"
+                : "Senior Dev"}
             </Badge>
           </div>
-          <p className="text-sm text-muted-foreground line-clamp-2 italic leading-relaxed">
+          <p className="text-sm text-muted-foreground line-clamp-2 italic">
             "{stack.ai_roasts.roast_text}"
           </p>
         </div>
       ) : (
-        <div className="bg-muted/50 rounded-xl p-4 mb-4">
+        <div className="bg-muted rounded-md p-3 mb-3">
           <p className="text-sm text-muted-foreground italic">
             Awaiting AI roast...
           </p>
