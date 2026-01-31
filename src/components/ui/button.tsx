@@ -5,21 +5,22 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium ring-offset-background transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-semibold ring-offset-background transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border-2 border-border",
   {
     variants: {
       variant: {
-        default: "bg-gradient-to-r from-cyber-blue to-cyber-purple text-white hover:shadow-cyber-glow",
-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-        outline: "border border-white/20 bg-transparent hover:bg-white/5 hover:border-white/30",
-        secondary: "bg-white/5 text-foreground border border-white/10 hover:bg-white/10",
-        ghost: "hover:bg-white/5 hover:text-foreground",
-        link: "text-cyber-blue underline-offset-4 hover:underline",
+        default: "bg-primary text-primary-foreground shadow-brutal hover:shadow-brutal-sm hover:translate-x-0.5 hover:translate-y-0.5",
+        destructive: "bg-destructive text-destructive-foreground shadow-brutal hover:shadow-brutal-sm hover:translate-x-0.5 hover:translate-y-0.5",
+        outline: "bg-card text-foreground shadow-brutal hover:shadow-brutal-sm hover:translate-x-0.5 hover:translate-y-0.5",
+        secondary: "bg-secondary text-secondary-foreground shadow-brutal hover:shadow-brutal-sm hover:translate-x-0.5 hover:translate-y-0.5",
+        ghost: "border-transparent hover:bg-muted hover:border-border",
+        link: "text-primary underline-offset-4 hover:underline border-transparent",
+        accent: "bg-accent text-accent-foreground shadow-brutal hover:shadow-brutal-sm hover:translate-x-0.5 hover:translate-y-0.5",
       },
       size: {
         default: "h-10 px-5 py-2",
-        sm: "h-9 rounded-md px-4",
-        lg: "h-11 rounded-lg px-8",
+        sm: "h-9 px-4",
+        lg: "h-12 px-8",
         icon: "h-10 w-10",
       },
     },

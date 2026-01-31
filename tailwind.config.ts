@@ -24,10 +24,7 @@ export default {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         canvas: "hsl(var(--canvas))",
-        surface: {
-          DEFAULT: "hsl(var(--surface))",
-          glass: "hsl(var(--surface-glass))",
-        },
+        surface: "hsl(var(--surface))",
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
@@ -56,17 +53,29 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // Neo-Brutalist Playful Colors
+        turquoise: {
+          DEFAULT: "hsl(180 70% 45%)",
+          light: "hsl(180 70% 60%)",
+          dark: "hsl(180 70% 35%)",
+        },
+        golden: {
+          DEFAULT: "hsl(45 100% 51%)",
+          light: "hsl(45 100% 65%)",
+          dark: "hsl(45 100% 40%)",
+        },
+        mint: "hsl(160 60% 80%)",
+        coral: "hsl(16 100% 66%)",
+        lavender: "hsl(270 60% 80%)",
+        sky: "hsl(200 100% 80%)",
+        // Legacy cyber colors mapped to new palette
         cyber: {
-          blue: "#00A3FF",
-          purple: "#8B5CF6",
+          blue: "hsl(180 70% 45%)",
+          purple: "hsl(270 60% 60%)",
         },
         silver: {
-          DEFAULT: "#E2E8F0",
-          dark: "#CBD5E1",
-        },
-        neon: {
-          purple: "hsl(var(--neon-purple))",
-          blue: "hsl(var(--electric-blue))",
+          DEFAULT: "hsl(220 14% 96%)",
+          dark: "hsl(220 14% 90%)",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
@@ -84,6 +93,14 @@ export default {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      borderWidth: {
+        '3': '3px',
+      },
+      boxShadow: {
+        'brutal': '4px 4px 0px hsl(var(--border))',
+        'brutal-lg': '6px 6px 0px hsl(var(--border))',
+        'brutal-sm': '2px 2px 0px hsl(var(--border))',
+      },
       keyframes: {
         "accordion-down": {
           from: { height: "0" },
@@ -97,28 +114,35 @@ export default {
           "0%": { backgroundPosition: "-200% 0" },
           "100%": { backgroundPosition: "200% 0" },
         },
-        "border-spin": {
-          "0%": { transform: "rotate(0deg)" },
-          "100%": { transform: "rotate(360deg)" },
+        wiggle: {
+          "0%, 100%": { transform: "rotate(-3deg)" },
+          "50%": { transform: "rotate(3deg)" },
         },
         float: {
+          "0%, 100%": { transform: "translateY(0) rotate(0deg)" },
+          "50%": { transform: "translateY(-10px) rotate(2deg)" },
+        },
+        bounce: {
           "0%, 100%": { transform: "translateY(0)" },
-          "50%": { transform: "translateY(-20px)" },
+          "50%": { transform: "translateY(-8px)" },
         },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         shimmer: "shimmer 2s linear infinite",
-        "border-spin": "border-spin 3s linear infinite",
+        wiggle: "wiggle 0.5s ease-in-out infinite",
         float: "float 6s ease-in-out infinite",
         "float-slow": "float 8s ease-in-out infinite",
         "float-slower": "float 12s ease-in-out infinite",
+        bounce: "bounce 2s ease-in-out infinite",
       },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
-        "grid-pattern": "linear-gradient(to right, hsl(var(--border-subtle)) 1px, transparent 1px), linear-gradient(to bottom, hsl(var(--border-subtle)) 1px, transparent 1px)",
-        "gradient-cyber": "linear-gradient(135deg, #00A3FF 0%, #8B5CF6 100%)",
+        "dots-pattern": "radial-gradient(circle, hsl(var(--border)) 1px, transparent 1px)",
+      },
+      backgroundSize: {
+        "dots": "20px 20px",
       },
     },
   },

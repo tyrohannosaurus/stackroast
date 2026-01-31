@@ -23,9 +23,16 @@ export function Hero() {
 
   return (
     <div className="space-y-12">
+      {/* Greeting Badge */}
+      <div className="flex justify-center">
+        <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent border-2 border-border shadow-brutal text-accent-foreground font-semibold">
+          Hi there! 👋
+        </span>
+      </div>
+
       {/* Main Heading with Animation */}
-      <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-center leading-tight tracking-tighter">
-        <span className="text-gradient">Roast my</span>{" "}
+      <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-center leading-tight tracking-tight text-foreground">
+        Roast my{" "}
         <span className="hero-typewriter">
           <TypeAnimation
             sequence={[
@@ -61,7 +68,7 @@ export function Hero() {
         <div className="flex flex-wrap items-center justify-center gap-4">
           <Button 
             size="lg" 
-            className="gap-2 rounded-full bg-gradient-to-r from-cyber-blue to-cyber-purple hover:shadow-cyber-glow transition-all duration-300" 
+            className="gap-2" 
             onClick={() => setDialogOpen(true)}
           >
             <Flame className="w-5 h-5" />
@@ -70,7 +77,7 @@ export function Hero() {
           <Button 
             size="lg" 
             variant="outline" 
-            className="gap-2 rounded-full border-white/20 hover:border-white/40 hover:bg-white/5 transition-all duration-300"
+            className="gap-2"
             onClick={() => setRepoDialogOpen(true)}
           >
             <Github className="w-5 h-5" />
@@ -78,8 +85,8 @@ export function Hero() {
           </Button>
           <Button 
             size="lg" 
-            variant="outline" 
-            className="gap-2 rounded-full border-cyber-purple/50 text-cyber-purple hover:bg-cyber-purple/10 transition-all duration-300"
+            variant="accent" 
+            className="gap-2"
             onClick={() => setVisualRoastOpen(true)}
           >
             <Eye className="w-5 h-5" />
@@ -90,7 +97,7 @@ export function Hero() {
           <Button 
             size="lg" 
             variant="ghost" 
-            className="gap-2 text-cyber-blue hover:text-cyber-blue/80 hover:bg-cyber-blue/10 rounded-full transition-all duration-300"
+            className="gap-2 text-primary"
             onClick={() => setRoastFriendOpen(true)}
           >
             <Users className="w-5 h-5" />
@@ -100,7 +107,7 @@ export function Hero() {
             <Button
               size="lg"
               variant="ghost"
-              className="gap-2 rounded-full hover:bg-white/5 transition-all duration-300"
+              className="gap-2"
             >
               <Sparkles className="w-5 h-5" />
               Browse Stack Kits
@@ -110,12 +117,24 @@ export function Hero() {
             size="lg"
             variant="ghost"
             onClick={scrollToRoasts}
-            className="gap-2 rounded-full hover:bg-white/5 transition-all duration-300"
+            className="gap-2"
           >
             View Recent Roasts
             <span className="ml-1">→</span>
           </Button>
         </div>
+      </div>
+
+      {/* Tech Pills - Like in the reference */}
+      <div className="flex flex-wrap items-center justify-center gap-3 pt-8">
+        {["React", "Next.js", "TypeScript", "Python", "Node.js", "Tailwind", "Supabase", "Vercel"].map((tech) => (
+          <span 
+            key={tech}
+            className="tech-pill"
+          >
+            {tech}
+          </span>
+        ))}
       </div>
 
       {/* Submit Stack Dialog */}

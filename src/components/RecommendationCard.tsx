@@ -53,18 +53,18 @@ export function RecommendationCard({
   const getTypeStyles = () => {
     switch (rec.type) {
       case 'budget':
-        return 'glass-card border-green-500/20';
+        return 'bg-mint/30 border-2 border-border';
       case 'missing':
-        return 'glass-card border-cyber-blue/20';
+        return 'bg-sky/30 border-2 border-border';
       case 'replacement':
         return rec.isSponsored
-          ? 'glass-card border-cyber-purple/30'
-          : 'glass-card';
+          ? 'bg-lavender/30 border-2 border-border'
+          : 'bg-card border-2 border-border';
     }
   };
 
   return (
-    <div className={`p-4 rounded-xl ${getTypeStyles()}`}>
+    <div className={`p-4 rounded-2xl shadow-brutal ${getTypeStyles()}`}>
       <div className="flex items-start gap-4">
           <ToolLogo
             src={toolData?.logo_url}
@@ -73,7 +73,7 @@ export function RecommendationCard({
           />
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2 flex-wrap">
-              <h4 className="font-semibold text-foreground">{rec.toolName}</h4>
+              <h4 className="font-bold text-foreground">{rec.toolName}</h4>
               {rec.currentTool && (
                 <>
                   <span className="text-muted-foreground">→</span>
@@ -83,13 +83,13 @@ export function RecommendationCard({
                 </>
               )}
               {rec.severity && (
-                <Badge variant="outline" className={`${getSeverityColor(rec.severity)} rounded-full`}>
+                <Badge variant="outline" className={`${getSeverityColor(rec.severity)} rounded-full border-2`}>
                   {getSeverityIcon(rec.severity)}
                   <span className="ml-1 capitalize">{rec.severity}</span>
                 </Badge>
               )}
               {rec.contextScore && (
-                <Badge variant="outline" className="bg-cyber-blue/10 text-cyber-blue border-cyber-blue/30 text-xs rounded-full">
+                <Badge variant="outline" className="bg-primary/10 text-primary border-2 border-border text-xs rounded-full font-semibold">
                   Fit: {rec.contextScore}/100
                 </Badge>
               )}
@@ -100,10 +100,10 @@ export function RecommendationCard({
             </div>
             <p className="text-sm text-muted-foreground mb-3 leading-relaxed">{rec.reason}</p>
             {rec.tradeoffs && rec.tradeoffs.length > 0 && (
-              <div className="mb-3 p-3 glass-surface rounded-lg border border-amber-500/20">
+              <div className="mb-3 p-3 bg-accent/50 rounded-xl border-2 border-border">
                 <div className="flex items-center gap-2 mb-1">
-                  <AlertTriangle className="w-3 h-3 text-amber-500" />
-                  <span className="text-xs font-medium text-foreground">Consider before switching:</span>
+                  <AlertTriangle className="w-3 h-3 text-coral" />
+                  <span className="text-xs font-bold text-foreground">Consider before switching:</span>
                 </div>
                 <ul className="list-disc list-inside space-y-0.5 text-xs text-muted-foreground ml-4">
                   {rec.tradeoffs.slice(0, 2).map((tradeoff, i) => (
@@ -115,26 +115,20 @@ export function RecommendationCard({
             <div className="flex flex-wrap items-center gap-4 text-sm">
               <div>
                 <span className="text-muted-foreground">Cost: </span>
-                <span className="font-medium text-foreground">{rec.estimatedCost}</span>
+                <span className="font-bold text-foreground">{rec.estimatedCost}</span>
               </div>
               {rec.savings?.money && (
-                <div className="text-green-500 font-medium">💰 {rec.savings.money}</div>
+                <div className="text-primary font-bold">💰 {rec.savings.money}</div>
               )}
               {rec.savings?.time && (
-                <div className="text-blue-500 font-medium">⏱️ {rec.savings.time}</div>
+                <div className="text-primary font-bold">⏱️ {rec.savings.time}</div>
               )}
             </div>
           </div>
           <div className="flex flex-col gap-2 shrink-0">
             <Button
               size="default"
-              className={`rounded-full ${
-                rec.isSponsored
-                  ? 'bg-gradient-to-r from-cyber-purple to-cyber-blue hover:shadow-cyber-glow text-white font-semibold'
-                  : rec.type === 'budget'
-                  ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:shadow-[0_0_20px_rgba(16,185,129,0.4)] text-white font-semibold'
-                  : 'bg-gradient-to-r from-cyber-blue to-cyber-purple hover:shadow-cyber-glow text-white font-semibold'
-              }`}
+              className="rounded-full"
               onClick={() =>
                 onAlternativeClick(
                   rec.currentTool || '',
@@ -157,13 +151,13 @@ export function RecommendationCard({
             </Button>
             {/* Social proof micro-copy */}
             {rec.contextScore && rec.contextScore >= 80 && (
-              <div className="flex items-center justify-center gap-1 text-xs text-cyber-blue font-medium">
+              <div className="flex items-center justify-center gap-1 text-xs text-primary font-bold">
                 <Zap className="w-3 h-3" />
                 <span>{rec.contextScore}% match</span>
               </div>
             )}
             {!rec.contextScore && rec.isSponsored && (
-              <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
+              <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground font-medium">
                 <Users className="w-3 h-3" />
                 <span>Popular choice</span>
               </div>

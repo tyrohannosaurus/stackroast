@@ -84,19 +84,19 @@ function StackCardPreviewComponent({ stack }: StackCardPreviewProps) {
 
   return (
     <div 
-      className="glass-card p-5 cursor-pointer group"
+      className="bg-card rounded-2xl p-5 cursor-pointer group border-2 border-border shadow-brutal hover:shadow-brutal-sm hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
       onClick={handleCardClick}
     >
       {/* Header */}
       <div className="flex items-start gap-3 mb-4">
-        <Avatar className="w-9 h-9 ring-1 ring-white/10">
+        <Avatar className="w-9 h-9 ring-2 ring-border">
           <AvatarImage src={stack.user.avatar_url} alt={stack.user.username} />
-          <AvatarFallback className="bg-white/5 text-sm">{stack.user.username[0]?.toUpperCase()}</AvatarFallback>
+          <AvatarFallback className="bg-primary text-primary-foreground text-sm">{stack.user.username[0]?.toUpperCase()}</AvatarFallback>
         </Avatar>
         <div className="flex-1 min-w-0">
           <Link
             to={`/user/${stack.user.username}`}
-            className="font-medium text-sm hover:text-cyber-blue transition-colors"
+            className="font-semibold text-sm hover:text-primary transition-colors"
           >
             @{stack.user.username}
           </Link>
@@ -105,14 +105,16 @@ function StackCardPreviewComponent({ stack }: StackCardPreviewProps) {
           </p>
         </div>
         <div className="text-right">
-          <div className="text-lg font-bold text-gradient-cyber">
-            {stack.burn_score}
+          <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-primary/10 border-2 border-border">
+            <span className="text-lg font-bold text-primary">
+              {stack.burn_score}
+            </span>
           </div>
         </div>
       </div>
 
       {/* Roast Preview */}
-      <div className="glass-surface rounded-lg p-4 mb-4">
+      <div className="bg-muted rounded-xl p-4 mb-4 border-2 border-border">
         <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
           {previewText}
         </p>
@@ -120,7 +122,7 @@ function StackCardPreviewComponent({ stack }: StackCardPreviewProps) {
 
       {/* Stats & Actions */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+        <div className="flex items-center gap-3 text-xs text-muted-foreground font-medium">
           <span className="flex items-center gap-1">
             🔥 {stack.roast_count}
           </span>
@@ -156,7 +158,7 @@ function StackCardPreviewComponent({ stack }: StackCardPreviewProps) {
             variant="ghost" 
             size="sm" 
             asChild
-            className="group-hover:text-cyber-blue transition-colors rounded-full"
+            className="group-hover:text-primary transition-colors rounded-full"
           >
             <Link to={`/stack/${stack.slug}`}>
               View Full <ArrowRight className="w-3 h-3 ml-1" />
